@@ -85,7 +85,7 @@ summary(tabInit,
 
 ```
 
-Our initial cohort is an aggregate of **`r toString(nrow(dat3))`** children between `r toString(round(min(dat3$AgeAtScan),digits=1))` and `r toString(round(max(dat3$AgeAtScan), digits=1))`-years old who participated in one of several neuroimaging studies at Kennedy Krieger Institute (KKI) between 2007 and 2020.
+Our initial cohort is an aggregate of **`r toString(nrow(dat3))`** children between `r toString(round(min(dat3$AgeAtScan),digits=1))` and `r toString(round(max(dat3$AgeAtScan), digits=1))`-years old who participated in one of several neuroimaging studies at Kennedy Krieger Institute (KKI) between `r toString(min(dat3$YearOfScan))` and `r toString(max(dat3$YearOfScan))`.
 
 #### Reshape data to combine motion quality control (QC) levels
 ```{r, tidy=TRUE}
@@ -136,17 +136,17 @@ levels(qcMelt$Included) <- c("Included", "Excluded")
 ```
 Motion QC levels:
 
-**Strict motion QC** = Ciric_length
+1. **Strict motion QC** = Ciric_length
 
 In the strict case, scans were excluded if mean FD exceeded .2 mm or they included less than five minutes of data free from frames with FD exceeding .25 mm
 
-**Lenient motion QC** = KKI_criteria
+2. **Lenient motion QC** = KKI_criteria
 
 In the lenient case, scans were excluded if the participant had less than 5 minutes of continuous data after removing frames in which the participant moved more than the nominal size of a voxel between any two frames (3 mm) or their head rotated 3\degree. This procedure was modeled after common head motion exclusion criteria for task fMRI data, which rely on voxel size to determine thresholds for unacceptable motion.
 
-**None** = all participants
+3. **None** = all participants
 
-#### Limit initial data set to complete cases
+#### Limit initial dataset to complete cases
 ```{r, results="asis"}
 
 dat3 <- filter(dat3, CompletePredictorCases==1)
@@ -164,7 +164,7 @@ summary(tabAbort,
         title='Scans aborted by diagnosis',digits=1, digits.p=4,digits.pct=1, numeric.simplify=TRUE, total=FALSE, test=FALSE)
 ```
 
-Scans were either not attempted after two unsuccessful mock scan training sessions or aborted due to non-compliance for **`r toString(length(dat3[dat3$aborted=="Yes"]))`** of the participants (`r toString(length(dat3[dat3$aborted=="Yes"& dat3$PrimaryDiagnosis=="ASD"]))` ASD) in the set of complete cases.
+Scans were either not attempted after two unsuccessful mock scan training sessions or aborted due to non-compliance for **`r toString(length(dat3$ID[dat3$aborted=="Yes"]))`** of the participants (`r toString(length(dat3$ID[dat3$aborted=="Yes"& dat3$PrimaryDiagnosis=="ASD"]))` ASD) in the set of complete cases.
 
 #### 2.1.5 Determine number of participants in complete cases set who attempted more than one scan
 ```{r, results="asis"}
@@ -358,7 +358,7 @@ graph %>% export_svg() %>%
 tabN<- tableby(Motion.Exclusion.Level~
                  Included, data=filter(completeCases, Motion.Exclusion.Level!="None"))
 summary(tabN,  
-        title='Proportion of complete cases included/excluded by motion QC',digits=0, digits.p=4,digits.pct=1, numeric.simplify=TRUE, total=FALSE, test=FALSE)
+        title='Proportion of complete cases included and excluded by motion QC',digits=0, digits.p=4,digits.pct=1, numeric.simplify=TRUE, total=FALSE, test=FALSE)
 
 graph
 
@@ -426,7 +426,7 @@ dx_proportions
 ```
 
 
-**Figure 1b. Motion quality control leads to dramatic reductions in sample size.** The proportion of children in each diagnosis group whose scans were included (yellow) and excluded (lavender) using the strict (left) and lenient (right panel) gross motion QC. A larger proportion of children in the autism spectrum disorder (ASD) group were excluded compared to typically developing (TD) children using lenient motion QC ($\chi^2$=10.3, df = 1, p=0.001) and strict ($\chi^2$=19.9, df = 1, p<0.001).
+**Figure 1b.** The proportion of children in each diagnosis group whose scans were included (yellow) and excluded (lavender) using the strict (left) and lenient (right panel) gross motion QC. A larger proportion of children in the autism spectrum disorder (ASD) group had unusable data and were excluded compared to typically developing (TD) children using lenient motion QC ($\chi^2$=`r toString(round(ex_chisq$statistic[ex_chisq$Motion.Exclusion.Level=="Lenient"], digits=1))`, df = 1, p=`r toString(round(ex_chisq$p.value[ex_chisq$Motion.Exclusion.Level=="Lenient"], digits=3))`) and strict ($\chi^2$=`r toString(round(ex_chisq$statistic[ex_chisq$Motion.Exclusion.Level=="Strict"], digits=1))`, df = 1, p=`r toString(round(ex_chisq$p.value[ex_chisq$Motion.Exclusion.Level=="Lenient"], digits=3))`).
 
 #### Figure 1b. Numbers for main text
 ```{r, results="asis"}
@@ -886,7 +886,7 @@ cowplot::plot_grid(p_legend, top_row, NULL, bottom_row, NULL, hist_legend, nrow=
 ```
 NOTE: 19 rows = # of participants with missing Motor Overflow scores (imputed for the DRTMLE of the deconfounded group difference)
 
-**Figure 2. rs-fMRI exclusion probability changes with age and symptom severity.** Univariate analysis of rs-fMRI exclusion probability as a function of participant characteristics. From left to right: Autism Diagnostic Observation Schedule (ADOS), social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow, age, and general ability index (GAI) using the lenient (lavender lines, all FDR-adjusted p<0.01), and strict (red lines) motion quality control (all FDR-adjusted p<0.03). Phenotypic distributions for each diagnosis group (included and excluded scans) are displayed across the bottom panel (TD=typically developing, green; ASD=autism spectrum disorder, yellow).
+**Figure 2. rs-fMRI exclusion probability changes with age and symptom severity.** Univariate analysis of rs-fMRI exclusion probability as a function of participant characteristics. From left to right: Autism Diagnostic Observation Schedule (ADOS), social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow, age, and general ability index (GAI) using the lenient (lavender lines, all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Lenient"]), digits=2))`), and strict (red lines) motion quality control (all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Strict"]), digits = 2))`). Phenotypic distributions for each diagnosis group (included and excluded scans) are displayed across the bottom panel (TD=typically developing, green; ASD=autism spectrum disorder, yellow).
 
 ### 3.1.3. Phenotype and age representations differ between included and excluded children
 #### 3.1.3. Mann-Whitney U tests to compare included vs excluded participants using lenient motion QC (13 tests)
@@ -1060,7 +1060,7 @@ paper_ados <- ggplot(ados, aes(Motion.Exclusion.Level, value, fill = Included, c
 
 ```
 
-#### Checking positivity assumption for DRTMLE (reported in Discussion section of the paper)
+#### Checking the positivity assumption for DRTMLE (reported in Discussion section of the paper)
 ```{r}
 adosMaxAll = ados %>% filter(Motion.Exclusion.Level=="Lenient" & Included=="Excluded") %>% select(value) %>% max()
 adosMaxUsable = ados %>% filter(Motion.Exclusion.Level=="Lenient" & Included=="Included") %>% select(value) %>% max()
@@ -1709,4 +1709,4 @@ cowplot::plot_grid(meanFD_violin, maxFD_violin, frames_violin,
                    ncol=3, nrow =1, rel_widths = c(1/3, 1/3, 1/3), labels = c("","", ""))
 ```
 
-Framewise displacement metrics are more similar across diagnostic groups using the strict motion QC, but very few participants are labeled as usable.
+Framewise displacement metrics are more similar across diagnosis groups using the strict motion QC, but very few participants are labeled as usable.
