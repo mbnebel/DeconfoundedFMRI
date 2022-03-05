@@ -928,7 +928,11 @@ nested_mw_less <- aim1MW %>%
          includedMedian = map(idata, ~median(.x$value, na.rm=TRUE)),
          excludedMedian = map(edata, ~median(.x$value, na.rm=TRUE)),
          coefs = map(mwm, tidy)) %>% 
-  unnest(c(coefs, includedMedian, excludedMedian))
+  unnest(c(coefs, includedMedian, excludedMedian)) %>% 
+  #calculate Z using qnorm
+  mutate(Za = map(p.value, ~qnorm(.x/2))) %>% 
+  #calculate effect size from Z
+  mutate(r = map2(Za, data, ~(abs(.x)/sqrt(length(.y)))))
 
 #hypothesis: included children will be older and have greater GAI (4 tests)
 nested_mw_greater<- aim1MW %>% 
@@ -939,7 +943,11 @@ nested_mw_greater<- aim1MW %>%
          includedMedian = map(idata, ~median(.x$value, na.rm=TRUE)),
          excludedMedian = map(edata, ~median(.x$value, na.rm=TRUE)),
          coefs = map(mwm, tidy)) %>% 
-  unnest(c(coefs, includedMedian, excludedMedian))
+  unnest(c(coefs, includedMedian, excludedMedian)) %>% 
+  #calculate Z using qnorm
+  mutate(Za = map(p.value, ~qnorm(.x/2))) %>% 
+  #calculate effect size from Z
+  mutate(r = map2(Za, data, ~(abs(.x)/sqrt(length(.y)))))
 
 complete_mw <- rbind(nested_mw_less, nested_mw_greater)
 
@@ -953,14 +961,14 @@ names(complete_mw)[which(names(complete_mw)=="statistic")]="U"
 #complete_mw[order(complete_mw$PrimaryDiagnosis, decreasing=TRUE), c(1:2, 7:9, 13)]
 
 #sort by q-value/p.fdr to ease interpretation of fdr adjusted p values
-complete_mw[order(complete_mw$p.fdr, decreasing=FALSE), c(1:2, 7:10, 13)]
+complete_mw[order(complete_mw$p.fdr, decreasing=FALSE), c(1:2, 7:10, 14:15)]
 
 #for the paper, sort by PrimaryDiagnosis
-xtable(complete_mw[order(complete_mw$PrimaryDiagnosis, decreasing=TRUE), c(1:2, 7:9, 13)])
+xtable(complete_mw[order(complete_mw$PrimaryDiagnosis, decreasing=TRUE), c(1:2, 7:8, 14:15)])
 
 #xtable(complete_mw[order(complete_mw$p.fdr, decreasing=FALSE), c(1:2, 7:10, 13)])
 
-aim1p = complete_mw[, c(1:2,7:8, 10,13)]
+aim1p = complete_mw[, c(1:2, 7:8, 10, 15)]
 
 aim1p$Motion.Exclusion.Level = rep("Lenient", nrow(aim1p))
 ```
@@ -984,7 +992,11 @@ nested_mw_less <- aim1MW %>%
          includedMedian = map(idata, ~median(.x$value, na.rm=TRUE)),
          excludedMedian = map(edata, ~median(.x$value, na.rm=TRUE)),
          coefs = map(mwm, tidy)) %>% 
-  unnest(c(coefs, includedMedian, excludedMedian))
+  unnest(c(coefs, includedMedian, excludedMedian)) %>% 
+  #calculate Z using qnorm
+  mutate(Za = map(p.value, ~qnorm(.x/2))) %>% 
+  #calculate effect size from Z
+  mutate(r = map2(Za, data, ~(abs(.x)/sqrt(length(.y)))))
 
 #hypothesis: included children will be older and have greater GAI
 nested_mw_greater<- aim1MW %>% 
@@ -995,7 +1007,11 @@ nested_mw_greater<- aim1MW %>%
          includedMedian = map(idata, ~median(.x$value, na.rm=TRUE)),
          excludedMedian = map(edata, ~median(.x$value, na.rm=TRUE)),
          coefs = map(mwm, tidy)) %>% 
-  unnest(c(coefs, includedMedian, excludedMedian))
+  unnest(c(coefs, includedMedian, excludedMedian)) %>% 
+  #calculate Z using qnorm
+  mutate(Za = map(p.value, ~qnorm(.x/2))) %>% 
+  #calculate effect size from Z
+  mutate(r = map2(Za, data, ~(abs(.x)/sqrt(length(.y)))))
 
 complete_mw <- rbind(nested_mw_less, nested_mw_greater)
 
@@ -1007,14 +1023,14 @@ complete_mw$p.fdr <- p.adjust(complete_mw$p.value, method = "BH")
 names(complete_mw)[which(names(complete_mw)=="statistic")]="U"
 
 #sort by q-value/p.fdr to ease interpretation of fdr adjusted p values
-complete_mw[order(complete_mw$p.fdr, decreasing=FALSE), c(1:2, 7:10, 13)]
+complete_mw[order(complete_mw$p.fdr, decreasing=FALSE), c(1:2, 7:10, 14:15)]
 
 #for the paper, sort by PrimaryDiagnosis
-xtable(complete_mw[order(complete_mw$PrimaryDiagnosis, decreasing=TRUE), c(1:2, 7:9, 13)])
+xtable(complete_mw[order(complete_mw$PrimaryDiagnosis, decreasing=TRUE), c(1:2, 7:8, 14:15)])
 
 #xtable(complete_mw[order(complete_mw$p.fdr, decreasing=FALSE), c(1:2, 7:10, 13)])
 
-temp = complete_mw[, c(1:2,7:8,10,13)]
+temp = complete_mw[, c(1:2,7:8,14:15)]
 temp$Motion.Exclusion.Level = rep("Strict", nrow(temp))
 
 aim1p <- rbind(aim1p, temp)
