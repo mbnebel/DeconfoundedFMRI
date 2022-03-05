@@ -930,9 +930,10 @@ nested_mw_less <- aim1MW %>%
          coefs = map(mwm, tidy)) %>% 
   unnest(c(coefs, includedMedian, excludedMedian)) %>% 
   #calculate Z using qnorm
-  mutate(Za = map(p.value, ~qnorm(.x/2))) %>% 
-  #calculate effect size from Z
-  mutate(r = map2(Za, data, ~(abs(.x)/sqrt(length(.y)))))
+  mutate(Za = map(p.value, ~qnorm(.x/2)),
+         # calculate number of observations
+         #N = map(data, ~length(na.omit(.x$value)))),
+         r = map2(Za, data, ~(abs(.x)/sqrt(length(na.omit(.y$value))))))
 
 #hypothesis: included children will be older and have greater GAI (4 tests)
 nested_mw_greater<- aim1MW %>% 
@@ -945,9 +946,10 @@ nested_mw_greater<- aim1MW %>%
          coefs = map(mwm, tidy)) %>% 
   unnest(c(coefs, includedMedian, excludedMedian)) %>% 
   #calculate Z using qnorm
-  mutate(Za = map(p.value, ~qnorm(.x/2))) %>% 
-  #calculate effect size from Z
-  mutate(r = map2(Za, data, ~(abs(.x)/sqrt(length(.y)))))
+  mutate(Za = map(p.value, ~qnorm(.x/2)),
+         # calculate number of observations
+         #N = map(data, ~length(na.omit(.x$value)))),
+         r = map2(Za, data, ~(abs(.x)/sqrt(length(na.omit(.y$value))))))
 
 complete_mw <- rbind(nested_mw_less, nested_mw_greater)
 
@@ -994,9 +996,10 @@ nested_mw_less <- aim1MW %>%
          coefs = map(mwm, tidy)) %>% 
   unnest(c(coefs, includedMedian, excludedMedian)) %>% 
   #calculate Z using qnorm
-  mutate(Za = map(p.value, ~qnorm(.x/2))) %>% 
-  #calculate effect size from Z
-  mutate(r = map2(Za, data, ~(abs(.x)/sqrt(length(.y)))))
+  mutate(Za = map(p.value, ~qnorm(.x/2)),
+         # calculate number of observations
+         #N = map(data, ~length(na.omit(.x$value)))),
+         r = map2(Za, data, ~(abs(.x)/sqrt(length(na.omit(.y$value))))))
 
 #hypothesis: included children will be older and have greater GAI
 nested_mw_greater<- aim1MW %>% 
@@ -1009,9 +1012,10 @@ nested_mw_greater<- aim1MW %>%
          coefs = map(mwm, tidy)) %>% 
   unnest(c(coefs, includedMedian, excludedMedian)) %>% 
   #calculate Z using qnorm
-  mutate(Za = map(p.value, ~qnorm(.x/2))) %>% 
-  #calculate effect size from Z
-  mutate(r = map2(Za, data, ~(abs(.x)/sqrt(length(.y)))))
+  mutate(Za = map(p.value, ~qnorm(.x/2)),
+         # calculate number of observations
+         #N = map(data, ~length(na.omit(.x$value)))),
+         r = map2(Za, data, ~(abs(.x)/sqrt(length(na.omit(.y$value))))))
 
 complete_mw <- rbind(nested_mw_less, nested_mw_greater)
 
