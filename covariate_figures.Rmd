@@ -929,11 +929,12 @@ nested_mw_less <- aim1MW %>%
          excludedMedian = map(edata, ~median(.x$value, na.rm=TRUE)),
          coefs = map(mwm, tidy)) %>% 
   unnest(c(coefs, includedMedian, excludedMedian)) %>% 
-  #calculate Z using qnorm
-  mutate(Za = map(p.value, ~qnorm(.x/2)),
+  #calculate Z for a one-sided test using qnorm
+  mutate(Za = map(p.value, ~qnorm(.x)),
          # calculate number of observations
          #N = map(data, ~length(na.omit(.x$value)))),
          r = map2(Za, data, ~(abs(.x)/sqrt(length(na.omit(.y$value))))))
+
 
 #hypothesis: included children will be older and have greater GAI (4 tests)
 nested_mw_greater<- aim1MW %>% 
@@ -945,8 +946,8 @@ nested_mw_greater<- aim1MW %>%
          excludedMedian = map(edata, ~median(.x$value, na.rm=TRUE)),
          coefs = map(mwm, tidy)) %>% 
   unnest(c(coefs, includedMedian, excludedMedian)) %>% 
-  #calculate Z using qnorm
-  mutate(Za = map(p.value, ~qnorm(.x/2)),
+  #calculate Z for a one-sided test using qnorm
+  mutate(Za = map(p.value, ~qnorm(.x)),
          # calculate number of observations
          #N = map(data, ~length(na.omit(.x$value)))),
          r = map2(Za, data, ~(abs(.x)/sqrt(length(na.omit(.y$value))))))
@@ -995,8 +996,8 @@ nested_mw_less <- aim1MW %>%
          excludedMedian = map(edata, ~median(.x$value, na.rm=TRUE)),
          coefs = map(mwm, tidy)) %>% 
   unnest(c(coefs, includedMedian, excludedMedian)) %>% 
-  #calculate Z using qnorm
-  mutate(Za = map(p.value, ~qnorm(.x/2)),
+  #calculate Z for a one-sided test using qnorm
+  mutate(Za = map(p.value, ~qnorm(.x)),
          # calculate number of observations
          #N = map(data, ~length(na.omit(.x$value)))),
          r = map2(Za, data, ~(abs(.x)/sqrt(length(na.omit(.y$value))))))
@@ -1011,8 +1012,8 @@ nested_mw_greater<- aim1MW %>%
          excludedMedian = map(edata, ~median(.x$value, na.rm=TRUE)),
          coefs = map(mwm, tidy)) %>% 
   unnest(c(coefs, includedMedian, excludedMedian)) %>% 
-  #calculate Z using qnorm
-  mutate(Za = map(p.value, ~qnorm(.x/2)),
+  #calculate Z for a one-sided test using qnorm
+  mutate(Za = map(p.value, ~qnorm(.x)),
          # calculate number of observations
          #N = map(data, ~length(na.omit(.x$value)))),
          r = map2(Za, data, ~(abs(.x)/sqrt(length(na.omit(.y$value))))))
