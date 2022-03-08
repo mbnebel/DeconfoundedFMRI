@@ -1,0 +1,593 @@
+---
+title: "Responding to Reviewer Concerns"
+author: "MB Nebel"
+date: '`r Sys.Date()`'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+#for flowchart
+library(DiagrammeR)
+#to export flowchart as .png
+#webshot::install_phantomjs()
+library(DiagrammeRsvg)
+library(rsvg)
+library(grid)
+library(xtable)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+#nest/unnest
+library(tidyr)
+#map function (kind of like a for loop)
+library(purrr)
+#tidy model summary
+library(broom)
+library(readxl)
+#for tableby
+library(arsenal)
+
+#Also uses functions from plyr, scales, mgcv, cowplot
+```
+
+#### Define geom_split_violin()
+Based on https://debruine.github.io/post/plot-comparison/
+```{r, tidy=TRUE}
+GeomSplitViolin <- ggproto("GeomSplitViolin", GeomViolin, draw_group = function(self, data, ..., draw_quantiles = NULL){
+  data <- transform(data, xminv = x - violinwidth * (x - xmin), xmaxv = x + violinwidth * (xmax - x))
+  grp <- data[1,'group']
+  newdata <- plyr::arrange(transform(data, x = if(grp%%2==1) xminv else xmaxv), if(grp%%2==1) y else -y)
+  newdata <- rbind(newdata[1, ], newdata, newdata[nrow(newdata), ], newdata[1, ])
+  newdata[c(1,nrow(newdata)-1,nrow(newdata)), 'x'] <- round(newdata[1, 'x']) 
+  if (length(draw_quantiles) > 0 & !scales::zero_range(range(data$y))) {
+    stopifnot(all(draw_quantiles >= 0), all(draw_quantiles <= 
+                                              1))
+    quantiles <- ggplot2:::create_quantile_segment_frame(data, draw_quantiles)
+    aesthetics <- data[rep(1, nrow(quantiles)), setdiff(names(data), c("x", "y")), drop = FALSE]
+    aesthetics$alpha <- rep(1, nrow(quantiles))
+    both <- cbind(quantiles, aesthetics)
+    quantile_grob <- GeomPath$draw_panel(both, ...)
+    ggplot2:::ggname("geom_split_violin", grid::grobTree(GeomPolygon$draw_panel(newdata, ...), quantile_grob))
+  }
+  else {
+    ggplot2:::ggname("geom_split_violin", GeomPolygon$draw_panel(newdata, ...))
+  }
+})
+
+geom_split_violin <- function (mapping = NULL, data = NULL, stat = "ydensity", position = "identity", ..., 
+                               draw_quantiles = NULL, trim = TRUE, scale = "area", na.rm = FALSE, show.legend = NA, 
+                               inherit.aes = TRUE) {
+  layer(data = data, mapping = mapping, stat = stat, geom = GeomSplitViolin, position = position, 
+        show.legend = show.legend, inherit.aes = inherit.aes, 
+        params = list(trim = trim, scale = scale, draw_quantiles = draw_quantiles, na.rm = na.rm, ...))
+}
+```
+
+#### Load initial data set
+```{r, results = "asis"}
+load('./Data/DataWithPropensities_seed1.RData')
+
+#convert PrimaryDiagnosis to factor
+dat3$PrimaryDiagnosis <- factor(dat3$PrimaryDiagnosis, levels = c("Autism", "None"))
+levels(dat3$PrimaryDiagnosis)
+
+dat3$PrimaryDiagnosis <- relevel(dat3$PrimaryDiagnosis, "None")
+levels(dat3$PrimaryDiagnosis) = c("TD", "ASD")
+
+tabInit<- tableby(PrimaryDiagnosis ~ Sex + AgeAtScan,
+                 data=dat3)
+summary(tabInit,  
+        title='Summary of diagnosis and sex of all participants who attempted a scan',digits=1, digits.p=4,digits.pct=1, numeric.simplify=TRUE, total=FALSE, test=FALSE)
+
+```
+
+Our initial cohort is an aggregate of **`r toString(nrow(dat3))`** children between `r toString(round(min(dat3$AgeAtScan),digits=1))` and `r toString(round(max(dat3$AgeAtScan), digits=1))`-years old who participated in one of several neuroimaging studies at Kennedy Krieger Institute (KKI) between `r toString(min(dat3$YearOfScan))` and `r toString(max(dat3$YearOfScan))`.
+
+#### Reshape data to combine motion quality control (QC) levels
+```{r, tidy=TRUE}
+#create dummy factor to include all subjects
+dat3$noExclusion <- ifelse(dat3$ID>0, "Pass", "Pass")
+dat3$noExclusion <- factor(dat3$noExclusion, levels = c("Pass", "Fail"))
+
+#convert KKI_criteria to factor with reference level "Pass"
+dat3$KKI_criteria <- factor(dat3$KKI_criteria, levels=c("Pass", "Fail"))
+
+#convert Ciric_length to factor with reference level "Pass" to match KKI_criteria
+dat3$Ciric_length <- factor(dat3$Ciric_length, levels=c("Pass", "Fail"))
+
+#combine Ciric_length, KKI, and noExclusion exclusion into one variable
+allVariables = c("ID", "PrimaryDiagnosis", "AgeAtScan", "Ciric_length", "KKI_criteria", "noExclusion",
+                 "PANESS.TotalOverflowNotAccountingForAge", "SRS.Score", "WISC.GAI", 
+                 "DuPaulHome.InattentionRaw", "DuPaulHome.HyperactivityRaw",  "ADOS.Comparable.Total",
+                 "CurrentlyOnStimulants", "HeadCoil", "Sex", 
+                 "ADHD_Secondary", "SES.Family", 
+                 "Race2", "handedness", "CompletePredictorCases",
+                 "YearOfScan", 
+                 "MeanFramewiseDisplacement.KKI", 
+                 "MeanFramewiseDisplacement",
+                 "MaxFramewiseDisplacement.KKI",
+                 "MaxFramewiseDisplacement")
+
+idVariables = c("ID", "PrimaryDiagnosis", "AgeAtScan",
+                "PANESS.TotalOverflowNotAccountingForAge", "SRS.Score", "WISC.GAI", 
+                "DuPaulHome.InattentionRaw", "DuPaulHome.HyperactivityRaw", "ADOS.Comparable.Total", 
+                "CurrentlyOnStimulants", "HeadCoil", "Sex", 
+                "ADHD_Secondary", "SES.Family", 
+                "Race2", "handedness", "CompletePredictorCases", 
+                "YearOfScan",
+                "MeanFramewiseDisplacement.KKI",
+                "MeanFramewiseDisplacement",
+                "MaxFramewiseDisplacement.KKI",
+                "MaxFramewiseDisplacement")
+
+qcMelt <- reshape2::melt(dat3[, allVariables],
+                         id.vars=names(dat3)[which(names(dat3) %in%  idVariables)], 
+                         variable.name = "Motion.Exclusion.Level",
+                         value.name = "Included")
+
+#rename exclusion levels
+#NOTE: need None to be highest level for geom_split_violin
+levels(qcMelt$Motion.Exclusion.Level) <- c("Strict", "Lenient", "None")
+
+#convert Included to factor with pass as reference
+qcMelt$Included <- factor(qcMelt$Included, levels=c("Pass", "Fail"))
+
+#rename levels of value
+levels(qcMelt$Included) <- c("Included", "Excluded")
+
+```
+Motion QC levels:
+
+1. **Strict motion QC** = Ciric_length
+
+In the strict case, scans were excluded if mean FD exceeded .2 mm or they included less than five minutes of data free from frames with FD exceeding .25 mm
+
+2. **Lenient motion QC** = KKI_criteria
+
+In the lenient case, scans were excluded if the participant had less than 5 minutes of continuous data after removing frames in which the participant moved more than the nominal size of a voxel between any two frames (3 mm) or their head rotated 3\degree. This procedure was modeled after common head motion exclusion criteria for task fMRI data, which rely on voxel size to determine thresholds for unacceptable motion.
+
+3. **None** = all participants
+
+#### Limit initial dataset to complete cases
+```{r, results="asis"}
+
+dat3 <- filter(dat3, CompletePredictorCases==1)
+
+completeCases <- filter(qcMelt, CompletePredictorCases==1)
+
+#make M reference level for sex
+completeCases$Sex <- relevel(as.factor(completeCases$Sex), "M")
+
+```
+
+```{r}
+#mean and max FD are different for lenient and strict because some frames at the beginning and/or end of the scan are excluded for scans to pass lenient motion QC
+completeCases$MeanFramewiseDisplacement[completeCases$Motion.Exclusion.Level=="Lenient"]=completeCases$MeanFramewiseDisplacement.KKI[completeCases$Motion.Exclusion.Level=="Lenient"]
+
+completeCases$MaxFramewiseDisplacement[completeCases$Motion.Exclusion.Level=="Lenient"]=completeCases$MaxFramewiseDisplacement.KKI[completeCases$Motion.Exclusion.Level=="Lenient"] 
+
+```
+
+
+### 3.1.2 mean framewise displacement as a function of phenotype and age (controlling for sex and SES)
+#### Covariates
+```{r}
+phenoVariables <- c("ID", "PrimaryDiagnosis", 
+                    "ADOS.Comparable.Total", 
+                    "SRS.Score", 
+                    "PANESS.TotalOverflowNotAccountingForAge", 
+                    "DuPaulHome.InattentionRaw",
+                    "DuPaulHome.HyperactivityRaw", 
+                    "AgeAtScan", 
+                    "WISC.GAI", "SES.Family",
+                    "Motion.Exclusion.Level", "Included", "Sex",
+                    "MeanFramewiseDisplacement" ,"MaxFramewiseDisplacement")
+
+phenoIDs <- c("ID", "PrimaryDiagnosis", "Motion.Exclusion.Level", "Included", "Sex", "SES.Family", "MeanFramewiseDisplacement" ,"MaxFramewiseDisplacement")
+
+aim1 <- reshape2::melt(completeCases[, phenoVariables],
+                         id.vars=names(completeCases)[which(names(completeCases) %in% phenoIDs)])
+
+levels(aim1$variable) <- c("ADOS", "SRS", "Motor Overflow", "Inattention", 
+                           "Hyperactivity", "Age", "GAI")
+
+aim1G <- group_by(aim1, PrimaryDiagnosis, Motion.Exclusion.Level, Included, variable)
+
+
+```
+
+#### Fit univarate GAMs using data from all children (those with usable rsfMRI data and those with unusable rsfMRI data)
+
+```{r}
+aim1tib <- tibble(filter(aim1, Motion.Exclusion.Level=="None"))
+aim1tib$Motion.Exclusion.Level <- droplevels(aim1tib$Motion.Exclusion.Level)
+
+
+#initialize dummy variable for Sex and centered SES.Family
+aim1tib$dummySex = rep(NA, length=nrow(aim1tib))
+aim1tib$SES.Family_centered = rep(NA, length=nrow(aim1tib))
+
+#if male, dummySex = 1; if female, dummySex = -1
+aim1tib$dummySex[aim1tib$Sex=="M"]=1
+aim1tib$dummySex[aim1tib$Sex=="F"]=-1
+
+aim1tib$SES.Family_centered = scale(aim1tib$SES.Family, center=TRUE, scale=FALSE)
+
+aim1Nest <- aim1tib %>% 
+  group_by(variable) %>% 
+  tidyr::nest()
+
+#nested models
+nested_gams <- aim1Nest %>%
+  mutate(model = map(data, ~mgcv::gam(MeanFramewiseDisplacement ~ s(value, k=-1),
+                                      data = na.omit(.x), 
+                                      method="REML")))
+#average SES and sex both 0
+nested_gams <- nested_gams %>% 
+           mutate(LB = map(data, ~round(min(na.omit(.x$value)))),
+                  UB = map(data, ~round(max(na.omit(.x$value)))),
+                  range = map2(LB, UB, ~seq(from=.x, to=.y, by=1)),
+                  #sex = map(value, ~rep(0, length=length(value))),
+                  #ses = map(value, ~rep(0, length=length(value))),
+                  fit.data = map(range, ~data.frame(value = .x)),
+                  FDpredict = map2(model, fit.data, ~predict(.x, newdata = .y, se.fit=TRUE)),
+                  fit = map(FDpredict, ~.x$fit),
+                  lCI = map(FDpredict, ~(.x$fit-1.96*.x$se.fit)),
+                  hCI = map(FDpredict, ~(.x$fit+1.96*.x$se.fit)))
+
+```
+
+#### Define theme for Figure 2 top row
+```{r, message=FALSE, warning=FALSE}
+gam_theme = theme(
+  axis.title.x=element_text(size=12),
+  axis.title.y=element_text(size=12),
+  axis.text.x=element_text(size=8),
+  axis.text.y=element_text(size=10),
+  plot.title = element_text(size = 16),
+  plot.caption = element_text(size = 16,hjust = 0),
+  legend.title = element_blank(), legend.position ="none")
+
+```
+
+#### Figure 2a top. Probability of exclusion as a function of ADOS
+```{r}
+ados <- nested_gams %>% 
+  filter(variable=="ADOS") %>% 
+  select("variable", "range", "fit", "lCI", "hCI") %>% 
+  unnest(c(range, fit, lCI, hCI))
+
+
+p_ados <- ggplot(ados, aes(x=range, y=fit))+
+  geom_line(aes(),size=1.2)+theme_bw()+
+  geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
+  labs(x='', y='mean FD')+  
+  scale_x_continuous(expand = c(0, 0))+ 
+  gam_theme+
+  ggtitle("ADOS")+
+  theme(plot.title = element_text(size = 11, hjust = 0.5))
+
+```
+
+#### Figure 2b top. Probability of exclusion as a function of SRS
+```{r}
+srs <- nested_gams %>% 
+  filter(variable=="SRS") %>% 
+  select("variable","range", "fit", 'lCI', 'hCI') %>% 
+  unnest(c(range, fit, lCI, hCI))
+
+p_srs <- ggplot(srs, aes(x=range, y=fit))+
+  geom_line(size=1.2)+
+  theme_bw()+
+  geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
+  labs(x='', y='')+  
+  scale_x_continuous(expand = c(0, 0))+
+  gam_theme+
+  ggtitle("SRS")+
+  theme(plot.title = element_text(size = 11, hjust = 0.5))+
+  theme(axis.title.y = element_blank())
+
+```
+
+#### Figure 2c top. Probability of exclusion as a function of Inattention
+```{r}
+ina <- nested_gams %>% 
+  filter(variable=="Inattention") %>% 
+  select("variable", "range", "fit", 'lCI', 'hCI') %>% 
+  unnest(c(range, fit, lCI, hCI))
+
+p_in <- ggplot(ina, aes(x=range, y=fit))+
+  geom_line(size=1.2)+
+  theme_bw()+
+  geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
+  labs(x='', y='')+  
+  scale_x_continuous(expand = c(0, 0))+ 
+  gam_theme+
+  ggtitle("Inattention")+
+  theme(plot.title = element_text(size = 11, hjust = 0.5))+
+  theme(axis.title.y = element_blank())
+
+```
+
+#### Figure 2d top. Probability of exclusion as a function of Hyperactivity
+```{r}
+hi <- nested_gams %>% 
+  filter(variable=="Hyperactivity") %>% 
+  select("variable",  "range", "fit", 'lCI', 'hCI') %>% 
+  unnest(c(range, fit, lCI, hCI))
+
+p_hi <- ggplot(hi, aes(x=range, y=fit))+
+  geom_line(size=1.2)+
+  theme_bw()+
+  geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
+  labs(x='', y='')+  
+  scale_x_continuous(expand = c(0, 0))+ 
+  gam_theme+
+  ggtitle("Hyperactivity")+
+  theme(plot.title = element_text(size = 11, hjust = 0.5))+
+  theme(axis.title.y = element_blank())
+```
+
+#### Figure 2e top. Probability of exclusion as a function of Motor Overflow
+```{r}
+mo <- nested_gams %>% 
+  filter(variable=="Motor Overflow") %>% 
+  select("variable", "range", "fit", 'lCI', 'hCI') %>% 
+  unnest(c(range, fit, lCI, hCI))
+
+p_mo <- ggplot(mo, aes(x=range, y=fit))+
+  geom_line(size=1.2)+
+  theme_bw()+
+  geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
+  labs(x='', y='')+  
+  scale_x_continuous(expand = c(0, 0))+ 
+  gam_theme+
+  ggtitle("Motor Overflow")+
+  theme(plot.title = element_text(size = 11, hjust = 0.5))+
+  theme(axis.title.y = element_blank())
+```
+
+#### Figure 2f top. Probability of exclusion as a function of Age
+```{r}
+age<- nested_gams %>% 
+  filter(variable=="Age") %>% 
+  select("variable", "range", "fit", 'lCI', 'hCI') %>% 
+  unnest(c(range, fit, lCI, hCI))
+
+p_age <- ggplot(age, aes(x=range, y=fit))+
+  geom_line(size=1.2)+
+  theme_bw()+
+  geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
+  labs(x='', y='')+  
+  scale_x_continuous(expand = c(0, 0))+ 
+  gam_theme+
+  ggtitle("Age")+
+  theme(plot.title = element_text(size = 11, hjust = 0.5))+
+  theme(axis.title.y = element_blank())
+```
+
+#### Figure 2g top. Probability of exclusion as a function of GAI
+```{r}
+gai <- nested_gams %>% 
+  filter(variable=="GAI") %>% 
+  select("variable", "range", "fit", 'lCI', 'hCI') %>% 
+  unnest(c(range, fit, lCI, hCI))
+
+p_gai <- ggplot(gai, aes(x=range, y=fit))+
+  geom_line(size=1.2)+
+  theme_bw()+
+  geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
+  labs(x='', y='')+  
+  scale_x_continuous(expand = c(0, 0))+ 
+  gam_theme+
+  ggtitle("GAI")+
+  theme(plot.title = element_text(size = 11, hjust = 0.5))+
+  theme(axis.title.y = element_blank())
+
+p_legend = cowplot::get_legend(p_gai + guides(color = guide_legend(nrow = 1))+
+                                 theme(legend.position = "bottom", legend.text = element_text(size = 11),
+                                       legend.key.size=unit(.15, "in")))
+
+```
+
+
+
+#### Figure 2 bottom row: Density plots of covariates used to fit GAMs (across included & excluded children) 
+#### Define theme for density plots of covariates across included and excluded children
+```{r,echo=F, message=FALSE, warning=FALSE}
+den_theme = theme(
+  axis.title.x=element_text(size=12),
+  axis.title.y=element_text(size=12),
+  axis.text.x=element_text(size=8),
+  axis.text.y=element_text(size=10),
+  plot.title = element_text(size = 16),
+  plot.caption = element_text(size = 16,hjust = 0),
+  legend.title = element_blank(), legend.position ="none",
+  panel.grid.major = element_blank(), 
+  panel.grid.minor = element_blank(), panel.background = element_blank(), 
+  axis.line = element_line(size=.5), panel.border = element_blank())
+
+```
+
+#### Figure 2a bottom. ADOS density
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="ADOS") %>% 
+  select("variable", "data") %>% 
+  unnest(data) %>% 
+  filter(PrimaryDiagnosis=="ASD")
+
+ddata$PrimaryDiagnosis <- droplevels(ddata$PrimaryDiagnosis)
+
+d_ados=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0))+  
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .09), breaks=seq(0, .08, by=.02))+  
+  labs(x='', y='Density')+
+  scale_fill_manual(values = c("#FDE599"))+ 
+  scale_color_manual(values = c("#E9D38D"))+ 
+  den_theme
+
+```
+
+#### Figure 2b bottom. SRS density
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="SRS") %>% 
+  select("variable", "data") %>% 
+  unnest(data)
+
+d_srs=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits=c(0,max(srs$range)),breaks = seq(0, 100 , by = 50))+  
+  scale_y_continuous(expand = c(0, 0))+  
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+#### Figure 2c bottom. Inattention density
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="Inattention") %>% 
+  select("variable", "data") %>% 
+  unnest(data)
+
+d_in=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0))+  
+  scale_y_continuous(expand = c(0, 0))+  
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  labs(x='')+  
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  theme(axis.title.y = element_blank())+
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+#### Figure 2d bottom. Hyperactivity/Impulsivity Density
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="Hyperactivity") %>% 
+  select("variable", "data") %>% 
+  unnest(data)
+
+d_hi=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0))+  
+  scale_y_continuous(expand = c(0, 0))+  
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+#### Figure 2e bottom. Motor Overflow Density
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="Motor Overflow") %>% 
+  select("variable", "data") %>% 
+  unnest(data)
+
+d_mo=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0))+  
+  scale_y_continuous(expand = c(0, 0))+  
+  theme(axis.title.y = element_blank())+
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+#### Figure 2f bottom. Age Density
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="Age") %>% 
+  select("variable", "data") %>% 
+  unnest(data)
+
+d_age=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits=c(8,13), breaks = seq(8, 13 , by = 1))+  
+  scale_y_continuous(expand = c(0, 0), limits=c(0,.29), breaks=seq(0, .25, by = .05))+ 
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+#### Figure 2g bottom. GAI Density
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="GAI") %>% 
+  select("variable", "data") %>% 
+  unnest(data)
+
+d_gai=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0))+  
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .035), breaks=seq(0., .03, by=.01))+  
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  labs(x='')+  
+  theme(axis.title.y = element_blank())
+
+hist_legend = cowplot::get_legend(d_gai + guides(color = guide_legend(nrow = 1))+theme(legend.position = "bottom", legend.text = element_text(size = 11),   legend.key.size=unit(.15, "in")))
+
+```
+
+
+#### combine gam plots with densities & print
+```{r, fig.width=10, fig.height=6}
+
+top_row <- cowplot::plot_grid(p_ados, p_srs, p_in, p_hi, p_mo, p_age, p_gai, ncol=7, rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
+bottom_row <- cowplot::plot_grid(d_ados, d_srs, d_in, d_hi, d_mo, d_age, d_gai, ncol=7, rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
+
+png("./CovariatesAndRS-fMRIUsability/fig_meanFD_allGAM_TD_ASD_cc.png",width=10,height=6,units="in",res=200)
+cowplot::plot_grid(p_legend, top_row, NULL, bottom_row, NULL, hist_legend, nrow=6, rel_heights=c(.1, 1, -.05, .5, -.07, .1))
+dev.off()
+
+#png("~/Dropbox/Apps/Overleaf/MotionSelectionBias_rsfMRI/Figures/fig_probExclusion_allGAM_TD_ASD_cc.png",width=10,height=6,units="in",res=200)
+cowplot::plot_grid(p_legend, top_row, NULL, bottom_row, NULL, hist_legend, nrow=6, rel_heights=c(.1, 1, -.05, .5, -.07, .1))
+#dev.off()
+
+```
+
+**Figure 2. rs-fMRI exclusion probability changes with phenotype and age but not SES.** Univariate analysis of rs-fMRI exclusion probability as a function of participant characteristics. From left to right: Autism Diagnostic Observation Schedule (ADOS), social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow, age, general ability index (GAI), and socioeconomic status (SES) using the lenient (light blue lines, all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Lenient"]), digits=2))`), and strict (red lines) motion quality control (all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Strict"]), digits = 2))`). Variable distributions for each diagnosis group (included and excluded scans) are displayed across the bottom panel (TD=typically developing, green; ASD=autism spectrum disorder, yellow).
+
