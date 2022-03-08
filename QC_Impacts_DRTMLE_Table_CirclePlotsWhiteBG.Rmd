@@ -346,6 +346,10 @@ circos.clear()
 myChordDiagram(data=results.ave,varname='z.stat.diff.SL',alpha=0.05,alphaname='p.SL.fdr',title='B. DRTMLE Z-Statistic, ASD-TD, FDR=0.05')
 
 circos.clear()
+
+myChordDiagram(data=results.ave,varname='SL.naive.z.stat.diff',alpha=0.05,alphaname='p.SL.fdr',title='')
+
+circos.clear()
 ```
 
 #### DRTMLE-Naive ASD-TD Z-Statistic FDR=0.05
@@ -393,15 +397,21 @@ summary(tabfdr2,
 # group means for edges showing a group difference using DRTMLE:
 results.ave$NetworkPair <- stringr::str_c(results.ave$net1, '-', results.ave$net2)
 
-results.sigEdges = results.ave[fdr20.edges.SL,c(1, 22, 2:3, 7:9,13, 20:21)]
+#results.sigEdges = results.ave[fdr20.edges.SL,c(1, 23, 2:3, 7:9,13:14, 21:22)]
+results.sigEdges = results.ave[fdr20.edges.SL, c("EdgeName", "NetworkPair",
+                                                 "mean.ASD.naive", "mean.TD.naive", "z.stat.diff.naive",
+                                                 "mean.ASD.SL", "mean.TD.SL", "z.stat.diff.SL",
+                                                 "SL.naive.z.stat.diff",
+                                                 "p.naive.fdr", "p.SL.fdr")]
 
 results.sigEdges <- results.sigEdges[order(results.sigEdges$p.naive.fdr), ]
 
 knitr::kable(results.sigEdges, format="markdown", 
-             col.names = c("Edge", "Network Pair", "naive ASD mean", "naive TD mean", 
+             col.names = c("Edge", "Networks", "naive ASD mean", "naive TD mean", 
                            "naive ASD-TD Z",
                            "DRTMLE ASD mean", "DRTMLE TD mean", 
                            "DRTMLE ASD-TD Z",
+                           "DRTMLE-naive ASD-TD Z",
                            "naive FDR-adjusted p", 
                            "DRTMLE FDR-adjusted p"))
 
