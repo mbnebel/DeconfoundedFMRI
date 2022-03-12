@@ -1,0 +1,328 @@
+---
+title: "forReviewers_comparingImputation"
+author: "MB Nebel"
+date: "3/12/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(RColorBrewer)
+library(wesanderson)
+library(tidyverse)
+library(effsize)
+library(gridExtra)
+
+```
+
+#### Extensive imputation
+
+```{r}
+# Examine the stability of z-statistics under different seeds:
+results.all=NULL
+for (i in 1:200) {
+  load(paste0('./Results/ic30_pc85_glm_gam_drtmle_seed',i,'.RData'))
+  results.all = rbind(results.all,results.df)
+}
+rm(results.df)
+
+# second set of seeds:
+#Ben doesn't know why seed 365 failed
+results.all2=NULL
+for (i in 201:400) {
+  load(paste0('./Results/ic30_pc85_glm_gam_drtmle_seed',i,'.RData'))
+  results.all2 = rbind(results.all2,results.df)
+}
+rm(results.df)
+
+results.ave = results.all%>%
+  group_by(EdgeName)%>%
+  summarize(mean.ASD.naive=mean(mean.ASD.naive), 
+            mean.TD.naive=mean(mean.TD.naive),
+            mean.diff.naive=mean(mean.diff.naive),
+            z.stat.ASD.naive=mean(z.stat.ASD.naive),
+            z.stat.TD.naive=mean(z.stat.TD.naive),
+            z.stat.diff.naive=mean(z.stat.diff.naive),
+            mean.ASD.SL=mean(mean.ASD.SL),
+            mean.TD.SL=mean(mean.TD.SL),
+            mean.diff.SL=mean(mean.diff.SL),
+            z.stat.ASD.SL=mean(z.stat.ASD.SL),
+            z.stat.TD.SL=mean(z.stat.TD.SL),
+            z.stat.diff.SL=mean(z.stat.diff.SL),
+            SL.naive.mean.diff=mean(abs(mean.diff.SL)-abs(mean.diff.naive)))
+
+results.ave2 = results.all2%>%
+  group_by(EdgeName)%>%
+  summarize(mean.ASD.naive=mean(mean.ASD.naive), 
+            mean.TD.naive=mean(mean.TD.naive),
+            mean.diff.naive=mean(mean.diff.naive),
+            z.stat.ASD.naive=mean(z.stat.ASD.naive),
+            z.stat.TD.naive=mean(z.stat.TD.naive),
+            z.stat.diff.naive=mean(z.stat.diff.naive),
+            mean.ASD.SL=mean(mean.ASD.SL),
+            mean.TD.SL=mean(mean.TD.SL),
+            mean.diff.SL=mean(mean.diff.SL),
+            z.stat.ASD.SL=mean(z.stat.ASD.SL),
+            z.stat.TD.SL=mean(z.stat.TD.SL),
+            z.stat.diff.SL=mean(z.stat.diff.SL),
+            SL.naive.mean.diff=mean(abs(mean.diff.SL)-abs(mean.diff.naive)))
+
+# compare two estimates:
+plot(results.ave$z.stat.diff.SL~results.ave2$z.stat.diff.SL)
+head(cbind(results.ave$z.stat.diff.SL,results.ave2$z.stat.diff.SL))
+
+# this result appears in the manuscript:
+cor(results.ave$z.stat.diff.SL,results.ave2$z.stat.diff.SL)
+
+```
+
+```{r}
+results.ave$p.SL = 2*(1-pnorm(abs(results.ave$z.stat.diff.SL)))
+results.ave$p.SL.fdr = p.adjust(results.ave$p.SL,method='BH')
+
+results.ave2$p.SL = 2*(1-pnorm(abs(results.ave2$z.stat.diff.SL)))
+results.ave2$p.SL.fdr = p.adjust(results.ave2$p.SL,method='BH')
+
+sum(results.ave$p.SL.fdr<0.05)
+sum(results.ave2$p.SL.fdr<0.05)
+results.ave[results.ave$p.SL.fdr<0.05,c('EdgeName')]
+results.ave2[results.ave2$p.SL.fdr<0.05,c('EdgeName')]
+# 11 edges in first set, 10 in second at fdr=0.05
+
+sum(results.ave$p.SL.fdr<0.20)
+sum(results.ave2$p.SL.fdr<0.20)
+results.ave[results.ave$p.SL.fdr<0.2,c('EdgeName','z.stat.diff.SL','p.SL.fdr')]
+results.ave2[results.ave2$p.SL.fdr<0.2,c('EdgeName','z.stat.diff.SL','p.SL.fdr')]
+
+```
+
+```{r}
+results.ave = rbind(results.all,results.all2)%>%
+  group_by(EdgeID,EdgeName)%>%
+  summarize(mean.ASD.naive=mean(mean.ASD.naive), 
+            mean.TD.naive=mean(mean.TD.naive),
+            mean.diff.naive=mean(mean.diff.naive),
+            z.stat.ASD.naive=mean(z.stat.ASD.naive),
+            z.stat.TD.naive=mean(z.stat.TD.naive),
+            z.stat.diff.naive=mean(z.stat.diff.naive),
+            mean.ASD.SL=mean(mean.ASD.SL),
+            mean.TD.SL=mean(mean.TD.SL),
+            mean.diff.SL=mean(mean.diff.SL),
+            z.stat.ASD.SL=mean(z.stat.ASD.SL),
+            z.stat.TD.SL=mean(z.stat.TD.SL),
+            z.stat.diff.SL=mean(z.stat.diff.SL),
+            SL.naive.mean.diff=mean(abs(mean.diff.SL)-abs(mean.diff.naive)))
+
+results.ave$p.naive = 2*(1-pnorm(abs(results.ave$z.stat.diff.naive)))
+results.ave$p.naive.fdr = p.adjust(results.ave$p.naive,method='BH')
+results.ave$p.SL = 2*(1-pnorm(abs(results.ave$z.stat.diff.SL)))
+results.ave$p.SL.fdr = p.adjust(results.ave$p.SL,method='BH')
+
+sum(results.ave$p.SL.fdr<0.20)
+sum(results.ave$p.SL.fdr<0.05)
+```
+
+```{r}
+load('./Data/DataWithPropensities_seed1.RData')
+
+nEdges=153
+idx.pass.cc = dat3$KKI_criteria=='Pass' & !is.na(dat3$propensities.SL) & !is.na(dat3$r.ic1.ic2)
+idx.pass.cc.asd = idx.pass.cc & dat3$PrimaryDiagnosis=='Autism'
+idx.pass.cc.td = idx.pass.cc & dat3$PrimaryDiagnosis=='None'
+
+(list.edges = results.ave$EdgeName[results.ave$p.SL.fdr<0.20])
+list.pvalues = results.ave$p.SL[results.ave$p.SL.fdr<0.20]
+list.edges = list.edges[order(list.pvalues)]
+list.pvalues = sort(list.pvalues)
+
+list.edges
+
+```
+
+```{r}
+plot_pcorr_fun = function(EdgeName,EdgeNamePlot,legend=FALSE) { 
+  subdata = dat3[idx.pass.cc,c('PrimaryDiagnosis',EdgeName,'propensities.SL')]
+  names(subdata)[2] = 'EdgeName'
+  temp = results.ave[results.ave$EdgeName==EdgeName,c('mean.ASD.naive','mean.TD.naive')]
+  temp.naive = data.frame('PrimaryDiagnosis'=c('Autism','None'),'EdgeName'=c(temp$mean.ASD.naive,temp$mean.TD.naive))
+  temp = results.ave[results.ave$EdgeName==EdgeName,c('mean.ASD.SL','mean.TD.SL')]
+  temp.SL = data.frame('PrimaryDiagnosis'=c('Autism','None'),'EdgeName'=c(temp$mean.ASD.SL,temp$mean.TD.SL))
+  if(legend==FALSE) {
+    outplot = ggplot(subdata, aes(x=PrimaryDiagnosis, y=EdgeName))+ geom_jitter(shape=16,position=position_jitter(0.2),size=2,color='grey50')+xlab("Primary Diagnosis")+ylab(EdgeNamePlot)+geom_point(data=temp.naive,shape=15,size=2,color="red")+geom_point(data=temp.SL,shape=15,size=2,color='blue',alpha=0.5)+theme(legend.position="none") 
+  } else {
+    outplot = ggplot(subdata, aes(x=PrimaryDiagnosis, y=EdgeName))+ geom_jitter(shape=16,position=position_jitter(0.2),size=2,color='grey50')+xlab("Primary Diagnosis")+ylab(EdgeNamePlot)+geom_point(data=temp.naive,shape=15,size=2,color="red")+geom_point(data=temp.SL,shape=15,size=2,color='blue',alpha=0.5)}
+  outplot
+}
+```
+
+```{r}
+
+gn.p0=plot_pcorr_fun(EdgeName='r.ic2.ic27',EdgeNamePlot='IC02-IC27')
+gn.p1=plot_pcorr_fun(EdgeName='r.ic14.ic21',EdgeNamePlot='IC14-IC21')
+gn.p2=plot_pcorr_fun(EdgeName='r.ic13.ic26',EdgeNamePlot='IC13-IC26')
+gn.p3=plot_pcorr_fun(EdgeName='r.ic1.ic21',EdgeNamePlot='IC01-IC21')
+gn.p4=plot_pcorr_fun(EdgeName='r.ic17.ic24',EdgeNamePlot='IC17-IC24')
+gn.p5=plot_pcorr_fun(EdgeName='r.ic17.ic27',EdgeNamePlot='IC17-IC27')
+gn.p6=plot_pcorr_fun(EdgeName='r.ic14.ic21',EdgeNamePlot='IC14-IC21')
+gn.p7=plot_pcorr_fun(EdgeName='r.ic1.ic24',EdgeNamePlot='IC01-IC24')
+gn.p8=plot_pcorr_fun(EdgeName='r.ic19.ic25',EdgeNamePlot='IC19-IC25', legend=TRUE)
+
+pdf(file='./Application_Figures/DataForNineComponents_naive_drtmle_imputeCovariates.pdf')
+grid.arrange(gn.p0,gn.p1,gn.p2,gn.p3,gn.p4,gn.p5,gn.p6, gn.p7, gn.p8, nrow=3)
+dev.off()
+
+
+```
+
+#### No imputation
+
+```{r}
+# Examine the stability of z-statistics under different seeds:
+results.all=NULL
+for (i in 1:200) {
+  load(paste0('./Results/Results_noimpute_8March2022/ic30_pc85_glm_gam_drtmle_seed',i,'.RData'))
+  results.all = rbind(results.all,results.df)
+}
+rm(results.df)
+
+# second set of seeds:
+#Ben doesn't know why seed 365 failed
+results.all2=NULL
+for (i in 201:401) {
+  if (i ==365) {
+    next
+  }
+  load(paste0('./Results/Results_noimpute_8March2022/ic30_pc85_glm_gam_drtmle_seed',i,'.RData'))
+  results.all2 = rbind(results.all2,results.df)
+}
+rm(results.df)
+
+results.ave = results.all%>%
+  group_by(EdgeName)%>%
+  summarize(mean.ASD.naive=mean(mean.ASD.naive), 
+            mean.TD.naive=mean(mean.TD.naive),
+            mean.diff.naive=mean(mean.diff.naive),
+            z.stat.ASD.naive=mean(z.stat.ASD.naive),
+            z.stat.TD.naive=mean(z.stat.TD.naive),
+            z.stat.diff.naive=mean(z.stat.diff.naive),
+            mean.ASD.SL=mean(mean.ASD.SL),
+            mean.TD.SL=mean(mean.TD.SL),
+            mean.diff.SL=mean(mean.diff.SL),
+            z.stat.ASD.SL=mean(z.stat.ASD.SL),
+            z.stat.TD.SL=mean(z.stat.TD.SL),
+            z.stat.diff.SL=mean(z.stat.diff.SL),
+            SL.naive.mean.diff=mean(abs(mean.diff.SL)-abs(mean.diff.naive)))
+
+results.ave2 = results.all2%>%
+  group_by(EdgeName)%>%
+  summarize(mean.ASD.naive=mean(mean.ASD.naive), 
+            mean.TD.naive=mean(mean.TD.naive),
+            mean.diff.naive=mean(mean.diff.naive),
+            z.stat.ASD.naive=mean(z.stat.ASD.naive),
+            z.stat.TD.naive=mean(z.stat.TD.naive),
+            z.stat.diff.naive=mean(z.stat.diff.naive),
+            mean.ASD.SL=mean(mean.ASD.SL),
+            mean.TD.SL=mean(mean.TD.SL),
+            mean.diff.SL=mean(mean.diff.SL),
+            z.stat.ASD.SL=mean(z.stat.ASD.SL),
+            z.stat.TD.SL=mean(z.stat.TD.SL),
+            z.stat.diff.SL=mean(z.stat.diff.SL),
+            SL.naive.mean.diff=mean(abs(mean.diff.SL)-abs(mean.diff.naive)))
+
+# compare two estimates:
+plot(results.ave$z.stat.diff.SL~results.ave2$z.stat.diff.SL)
+head(cbind(results.ave$z.stat.diff.SL,results.ave2$z.stat.diff.SL))
+
+# this result appears in the manuscript:
+cor(results.ave$z.stat.diff.SL,results.ave2$z.stat.diff.SL)
+
+```
+
+```{r}
+results.ave$p.SL = 2*(1-pnorm(abs(results.ave$z.stat.diff.SL)))
+results.ave$p.SL.fdr = p.adjust(results.ave$p.SL,method='BH')
+
+results.ave2$p.SL = 2*(1-pnorm(abs(results.ave2$z.stat.diff.SL)))
+results.ave2$p.SL.fdr = p.adjust(results.ave2$p.SL,method='BH')
+
+sum(results.ave$p.SL.fdr<0.05)
+sum(results.ave2$p.SL.fdr<0.05)
+results.ave[results.ave$p.SL.fdr<0.05,c('EdgeName')]
+results.ave2[results.ave2$p.SL.fdr<0.05,c('EdgeName')]
+# 11 edges in first set, 10 in second at fdr=0.05
+
+sum(results.ave$p.SL.fdr<0.20)
+sum(results.ave2$p.SL.fdr<0.20)
+results.ave[results.ave$p.SL.fdr<0.2,c('EdgeName','z.stat.diff.SL','p.SL.fdr')]
+results.ave2[results.ave2$p.SL.fdr<0.2,c('EdgeName','z.stat.diff.SL','p.SL.fdr')]
+
+```
+
+```{r}
+results.ave = rbind(results.all,results.all2)%>%
+  group_by(EdgeID,EdgeName)%>%
+  summarize(mean.ASD.naive=mean(mean.ASD.naive), 
+            mean.TD.naive=mean(mean.TD.naive),
+            mean.diff.naive=mean(mean.diff.naive),
+            z.stat.ASD.naive=mean(z.stat.ASD.naive),
+            z.stat.TD.naive=mean(z.stat.TD.naive),
+            z.stat.diff.naive=mean(z.stat.diff.naive),
+            mean.ASD.SL=mean(mean.ASD.SL),
+            mean.TD.SL=mean(mean.TD.SL),
+            mean.diff.SL=mean(mean.diff.SL),
+            z.stat.ASD.SL=mean(z.stat.ASD.SL),
+            z.stat.TD.SL=mean(z.stat.TD.SL),
+            z.stat.diff.SL=mean(z.stat.diff.SL),
+            SL.naive.mean.diff=mean(abs(mean.diff.SL)-abs(mean.diff.naive)))
+
+results.ave$p.naive = 2*(1-pnorm(abs(results.ave$z.stat.diff.naive)))
+results.ave$p.naive.fdr = p.adjust(results.ave$p.naive,method='BH')
+results.ave$p.SL = 2*(1-pnorm(abs(results.ave$z.stat.diff.SL)))
+results.ave$p.SL.fdr = p.adjust(results.ave$p.SL,method='BH')
+
+sum(results.ave$p.SL.fdr<0.20)
+sum(results.ave$p.SL.fdr<0.05)
+```
+
+```{r}
+load('./Results/Results_noimpute_8March2022/DataWithPropensities_seed1.RData')
+
+nEdges=153
+idx.pass.cc = dat3$KKI_criteria=='Pass' & !is.na(dat3$propensities.SL) & !is.na(dat3$r.ic1.ic2)
+idx.pass.cc.asd = idx.pass.cc & dat3$PrimaryDiagnosis=='Autism'
+idx.pass.cc.td = idx.pass.cc & dat3$PrimaryDiagnosis=='None'
+
+(list.edges = results.ave$EdgeName[results.ave$p.SL.fdr<0.20])
+list.pvalues = results.ave$p.SL[results.ave$p.SL.fdr<0.20]
+list.edges = list.edges[order(list.pvalues)]
+list.pvalues = sort(list.pvalues)
+
+list.edges
+
+```
+
+
+```{r}
+
+gn.p0=plot_pcorr_fun(EdgeName='r.ic2.ic27',EdgeNamePlot='IC02-IC27')
+gn.p1=plot_pcorr_fun(EdgeName='r.ic14.ic21',EdgeNamePlot='IC14-IC21')
+gn.p2=plot_pcorr_fun(EdgeName='r.ic19.ic26',EdgeNamePlot='IC19-IC26')
+gn.p3=plot_pcorr_fun(EdgeName='r.ic4.ic17',EdgeNamePlot='IC04-IC17')
+gn.p4=plot_pcorr_fun(EdgeName='r.ic14.ic19',EdgeNamePlot='IC14-IC19')
+gn.p5=plot_pcorr_fun(EdgeName='r.ic13.ic26',EdgeNamePlot='IC13-IC26')
+gn.p6=plot_pcorr_fun(EdgeName='r.ic1.ic21',EdgeNamePlot='IC01-IC21')
+gn.p7=plot_pcorr_fun(EdgeName='r.ic17.ic24',EdgeNamePlot='IC17-IC24')
+gn.p8=plot_pcorr_fun(EdgeName='r.ic19.ic21',EdgeNamePlot='IC19-IC21', legend=TRUE)
+
+
+pdf(file='./Application_Figures/DataForNineComponents_naive_drtmle_noImpute.pdf')
+grid.arrange(gn.p0,gn.p1,gn.p2,gn.p3,gn.p4,gn.p5,gn.p6, gn.p7, gn.p8, nrow=3)
+dev.off()
+
+
+```
+
