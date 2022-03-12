@@ -69,7 +69,7 @@ geom_split_violin <- function (mapping = NULL, data = NULL, stat = "ydensity", p
 
 #### Load initial data set
 ```{r, results = "asis"}
-load('./Data/DataWithPropensities_seed1.RData')
+load('./Data/noImputation/DataWithPropensities_seed1.RData')
 
 #convert PrimaryDiagnosis to factor
 dat3$PrimaryDiagnosis <- factor(dat3$PrimaryDiagnosis, levels = c("Autism", "None"))
@@ -475,71 +475,47 @@ aim1G <- group_by(aim1, PrimaryDiagnosis, Motion.Exclusion.Level, Included, vari
 
 #### Fit univarate GAMs. 
 We used univariate models rather than a model with all covariates simultaneously because some of the variables are correlated, such that the impact of each variable on rs-fMRI usability may be difficult to estimate. These models are related to the propensity models that will be used in the estimation of the deconfounded group difference.
+
+We used univariate models rather than a model with all covariates simultaneously because some of the variables are correlated, such that the impact of each variable on rs-fMRI usability may be difficult to estimate. These models are related to the propensity models that will be used in the estimation of the deconfounded group difference.
 ```{r}
 aim1$delta = rep(NA,length=nrow(aim1))
 aim1$delta = ifelse(aim1$Included=="Included",1,0)
 aim1tib <- tibble(filter(aim1, Motion.Exclusion.Level!="None"))
 aim1tib$Motion.Exclusion.Level <- droplevels(aim1tib$Motion.Exclusion.Level)
-
-#initialize dummy variable for Sex and centered SES.Family
-aim1tib$dummySex = rep(NA, length=nrow(aim1tib))
-aim1tib$SES.Family_centered = rep(NA, length=nrow(aim1tib))
-
-#if male, dummySex = 1; if female, dummySex = -1
-aim1tib$dummySex[aim1tib$Sex=="M"]=1
-aim1tib$dummySex[aim1tib$Sex=="F"]=-1
-
-aim1tib$SES.Family_centered = scale(aim1tib$SES.Family, center=TRUE, scale=FALSE)
-
-#model sex separately, needs to be a factor
 aim1Nest <- aim1tib %>% 
   group_by(Motion.Exclusion.Level, variable) %>% 
   tidyr::nest()
-
 #nested models
-nested_gams <- aim1Nest %>%
-  mutate(model = map(data, ~mgcv::gam(1-delta~s(value, k=-1)+dummySex+s(SES.Family_centered, k=-1), data = na.omit(.x), 
+nested_gams <- aim1Nest %>% 
+  mutate(model = map(data, ~mgcv::gam(1-delta~s(value, k=-1), data = na.omit(.x), 
                                       family=binomial(link=logit), method="REML")), 
          coefs = map(model, tidy, conf.int = FALSE),
          Rsq = map_dbl(model, ~summary(.)$r.sq)) %>% 
   unnest(coefs)
-
 #Ben: correct for 7 lenient and 7 strict 
 nested_gams_len <-  nested_gams %>% 
-  filter(Motion.Exclusion.Level=="Lenient" & term =="s(value)")
-
+  filter(Motion.Exclusion.Level=="Lenient")
 nested_gams_len$p.fdr = p.adjust(nested_gams_len$p.value, method = "BH")
-
 nested_gams_strict <-  nested_gams %>% 
-  filter(Motion.Exclusion.Level=="Strict" & term =="s(value)")
+  filter(Motion.Exclusion.Level=="Strict")
   
 nested_gams_strict$p.fdr = p.adjust(nested_gams_strict$p.value, method = "BH")
-
 #combine to print
 nested_gams <- rbind(nested_gams_len, nested_gams_strict)
-
 #list adjusted p values
 nested_gams[, c(1:2,6:11)]
-
 #max p value for 7 lenient models
 max(nested_gams_len$p.fdr)
-
 #max p value for 7 strict models
 max(nested_gams_strict$p.fdr)
-
-#average SES and sex both 0
 nested_gams <- nested_gams %>% 
            mutate(LB = map(data, ~round(min(na.omit(.x$value)))),
                   UB = map(data, ~round(max(na.omit(.x$value)))),
                   range = map2(LB, UB, ~seq(from=.x, to=.y, by=1)),
-                  #sex = map(value, ~rep(0, length=length(value))),
-                  #ses = map(value, ~rep(0, length=length(value))),
-                  fit.data = map(range, ~data.frame(value = .x, dummySex = rep(0, length=length(.x)), SES.Family_centered = rep(0, length=length(.x)))),
-                  logpredict = map2(model, fit.data, ~predict(.x, newdata = .y, type="link",se.fit=TRUE)),
+                  logpredict = map2(model, range, ~predict(.x, newdata = data.frame(value = .y), type="link",se.fit=TRUE)),
                   fit = map(logpredict, ~plogis(.x$fit)),
                   lCI = map(logpredict, ~plogis(.x$fit-1.96*.x$se.fit)),
                   hCI = map(logpredict, ~plogis(.x$fit+1.96*.x$se.fit)))
-
 ```
 
 #### Define theme for Figure 2 top row
@@ -552,7 +528,6 @@ gam_theme = theme(
   plot.title = element_text(size = 16),
   plot.caption = element_text(size = 16,hjust = 0),
   legend.title = element_blank(), legend.position ="none")
-
 ```
 
 #### Figure 2a top. Probability of exclusion as a function of ADOS
@@ -561,7 +536,6 @@ ados <- nested_gams %>%
   filter(variable=="ADOS") %>% 
   select("variable", "Motion.Exclusion.Level", "range", "fit", 'lCI', 'hCI') %>% 
   unnest(c(range, fit, lCI, hCI))
-
 p_ados <- ggplot(ados, aes(x=range, y=fit))+
   geom_line(aes(colour = Motion.Exclusion.Level),size=1.2)+ylim(0,1)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI, fill=Motion.Exclusion.Level), linetype='blank', alpha=0.2)+  
@@ -572,7 +546,6 @@ p_ados <- ggplot(ados, aes(x=range, y=fit))+
   gam_theme+
   ggtitle("ADOS")+
   theme(plot.title = element_text(size = 11, hjust = 0.5))
-
 ```
 
 #### Figure 2b top. Probability of exclusion as a function of SRS
@@ -581,7 +554,6 @@ srs <- nested_gams %>%
   filter(variable=="SRS") %>% 
   select("variable", "Motion.Exclusion.Level", "range", "fit", 'lCI', 'hCI') %>% 
   unnest(c(range, fit, lCI, hCI))
-
 p_srs <- ggplot(srs, aes(x=range, y=fit))+
   geom_line(aes(colour = Motion.Exclusion.Level),size=1.2)+ylim(0,1)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI, fill=Motion.Exclusion.Level), linetype='blank', alpha=0.2)+  
@@ -593,7 +565,6 @@ p_srs <- ggplot(srs, aes(x=range, y=fit))+
   ggtitle("SRS")+
   theme(plot.title = element_text(size = 11, hjust = 0.5))+
   theme(axis.title.y = element_blank())
-
 ```
 
 #### Figure 2c top. Probability of exclusion as a function of Inattention
@@ -602,7 +573,6 @@ ina <- nested_gams %>%
   filter(variable=="Inattention") %>% 
   select("variable", "Motion.Exclusion.Level", "range", "fit", 'lCI', 'hCI') %>% 
   unnest(c(range, fit, lCI, hCI))
-
 p_in <- ggplot(ina, aes(x=range, y=fit))+
   geom_line(aes(colour = Motion.Exclusion.Level),size=1.2)+ylim(0,1)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI, fill=Motion.Exclusion.Level), linetype='blank', alpha=0.2)+  
@@ -614,7 +584,6 @@ p_in <- ggplot(ina, aes(x=range, y=fit))+
   ggtitle("Inattention")+
   theme(plot.title = element_text(size = 11, hjust = 0.5))+
   theme(axis.title.y = element_blank())
-
 ```
 
 #### Figure 2d top. Probability of exclusion as a function of Hyperactivity
@@ -623,7 +592,6 @@ hi <- nested_gams %>%
   filter(variable=="Hyperactivity") %>% 
   select("variable", "Motion.Exclusion.Level", "range", "fit", 'lCI', 'hCI') %>% 
   unnest(c(range, fit, lCI, hCI))
-
 p_hi <- ggplot(hi, aes(x=range, y=fit))+
   geom_line(aes(colour = Motion.Exclusion.Level),size=1.2)+ylim(0,1)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI, fill=Motion.Exclusion.Level), linetype='blank', alpha=0.2)+  
@@ -643,7 +611,6 @@ mo <- nested_gams %>%
   filter(variable=="Motor Overflow") %>% 
   select("variable", "Motion.Exclusion.Level", "range", "fit", 'lCI', 'hCI') %>% 
   unnest(c(range, fit, lCI, hCI))
-
 p_mo <- ggplot(mo, aes(x=range, y=fit))+
   geom_line(aes(colour = Motion.Exclusion.Level),size=1.2)+ylim(0,1)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI, fill=Motion.Exclusion.Level), linetype='blank', alpha=0.2)+  
@@ -663,7 +630,6 @@ age<- nested_gams %>%
   filter(variable=="Age") %>% 
   select("variable", "Motion.Exclusion.Level", "range", "fit", 'lCI', 'hCI') %>% 
   unnest(c(range, fit, lCI, hCI))
-
 p_age <- ggplot(age, aes(x=range, y=fit))+
   geom_line(aes(colour = Motion.Exclusion.Level),size=1.2)+ylim(0,1)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI, fill=Motion.Exclusion.Level), linetype='blank', alpha=0.2)+  
@@ -683,7 +649,6 @@ gai <- nested_gams %>%
   filter(variable=="GAI") %>% 
   select("variable", "Motion.Exclusion.Level", "range", "fit", 'lCI', 'hCI') %>% 
   unnest(c(range, fit, lCI, hCI))
-
 p_gai <- ggplot(gai, aes(x=range, y=fit))+
   geom_line(aes(colour = Motion.Exclusion.Level),size=1.2)+ylim(0,1)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI, fill=Motion.Exclusion.Level), linetype='blank', alpha=0.2)+  
@@ -695,13 +660,10 @@ p_gai <- ggplot(gai, aes(x=range, y=fit))+
   ggtitle("GAI")+
   theme(plot.title = element_text(size = 11, hjust = 0.5))+
   theme(axis.title.y = element_blank())
-
 p_legend = cowplot::get_legend(p_gai + guides(color = guide_legend(nrow = 1))+
                                  theme(legend.position = "bottom", legend.text = element_text(size = 11),
                                        legend.key.size=unit(.15, "in")))
-
 ```
-
 
 
 #### Figure 2 bottom row: Density plots of covariates used to fit GAMs (across included & excluded children) 
@@ -922,7 +884,7 @@ aim1MW <- aim1tib %>%
 nested_mw_less <- aim1MW %>% 
   filter(variable %in% c("SRS", "Inattention", "Hyperactivity",
   "Motor Overflow")|(variable=="ADOS"&PrimaryDiagnosis=="ASD")) %>% 
-  mutate(mwm = map(data, ~wilcox.test(value~Included, alternative="less", data = na.omit(.x))),
+  mutate(mwm = map(data, ~wilcox.test(value~Included, alternative="less", correct = TRUE, data = na.omit(.x))),
          idata = map(data, ~filter(., Included=="Included")),
          edata = map(data, ~filter(., Included=="Excluded")),
          includedMedian = map(idata, ~median(.x$value, na.rm=TRUE)),
@@ -939,7 +901,7 @@ nested_mw_less <- aim1MW %>%
 #hypothesis: included children will be older and have greater GAI (4 tests)
 nested_mw_greater<- aim1MW %>% 
   filter(variable %in% c("Age", "GAI")) %>% 
-  mutate(mwm = map(data, ~wilcox.test(value~Included, alternative="greater", data = na.omit(.x))),
+  mutate(mwm = map(data, ~wilcox.test(value~Included, alternative="greater", correct = TRUE, data = na.omit(.x))),
          idata = map(data, ~filter(., Included=="Included")),
          edata = map(data, ~filter(., Included=="Excluded")),
          includedMedian = map(idata, ~median(.x$value, na.rm=TRUE)),
@@ -1365,7 +1327,7 @@ cowplot::plot_grid(fig2A, fig2B, ncol=2, rel_widths=c(.2, 1.2))
 
 ```
 
-**Figure 3. Participants with usable rs-fMRI data differed from participants with unusable rs-fMRI data.** Comparison of Autism Diagnostic Observation Schedule (ADOS) scores, social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, motor overflow, age, and general ability index (GAI) for included (yellow) and excluded (slate blue) participants stratified by diagnosis group and motion exclusion level. The deconfounded mean integrates across the diagnosis-specific distribution of usable and unusable covariates, which here is labeled as None. We controlled for 13 comparisons performed for the lenient and strict motion QC cases using the false discovery rate (FDR). ** indicate differences between included and excluded participants with an FDR-adjusted p value <0.05; * indicate FDR-adjusted p values <0.1. ^ indicate FDR-adjusted p values <0.2. A larger number of significant differences are observed using the lenient motion QC than the strict motion QC, but very few participants pass strict motion QC. autism spectrum disorder (ASD), typically developing (TD).
+**Figure 3. Participants with usable rs-fMRI data differed from participants with unusable rs-fMRI data.** Comparison of Autism Diagnostic Observation Schedule (ADOS) scores, social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, motor overflow, age, and general ability index (GAI) for included (yellow) and excluded (slate blue) participants stratified by diagnosis group and motion exclusion level. The deconfounded mean integrates across the diagnosis-specific distribution of usable and unusable covariates, which here is labeled as None. Mean values are indicated by a black dot; 95% bootstrap confidence intervals are indicated with black bars. We controlled for 13 comparisons performed for the lenient and strict motion QC cases using the false discovery rate (FDR). ** indicate differences between included and excluded participants with an FDR-adjusted p value <0.05; * indicate FDR-adjusted p values <0.1. ^ indicate FDR-adjusted p values <0.2. A larger number of significant differences are observed using the lenient motion QC than the strict motion QC, but very few participants pass strict motion QC. autism spectrum disorder (ASD), typically developing (TD).
 
 ### 3.1.4. Functional connectivity as a function of phenotype and age
 
@@ -1377,8 +1339,8 @@ names(dat3)[startEdgeidx:endEdgeidx]
 signalFC <- dat3[, c(1,startEdgeidx:endEdgeidx)]
 
 dat2 <- merge(aim1, signalFC, all=TRUE, by = "ID")
-fcMelt <- reshape2::melt(dat2[,1:160],
-                         id.vars=names(dat2)[1:7],
+fcMelt <- reshape2::melt(dat2[,1:162],
+                         id.vars=names(dat2)[1:9],
                          variable.name = "edge",
                          value.name = "fc")
 
