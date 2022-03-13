@@ -68,9 +68,7 @@ allVariables = c("ID", "PrimaryDiagnosis", "AgeAtScan", "Ciric_length", "KKI_cri
                  "Race2", "handedness", "CompletePredictorCases",
                  "YearOfScan", 
                  "MeanFramewiseDisplacement.KKI", 
-                 "MeanFramewiseDisplacement",
-                 "MaxFramewiseDisplacement.KKI",
-                 "MaxFramewiseDisplacement")
+                 "MeanFramewiseDisplacement")
 
 idVariables = c("ID", "PrimaryDiagnosis", "AgeAtScan",
                 "PANESS.TotalOverflowNotAccountingForAge", "SRS.Score", "WISC.GAI", 
@@ -80,9 +78,7 @@ idVariables = c("ID", "PrimaryDiagnosis", "AgeAtScan",
                 "Race2", "handedness", "CompletePredictorCases", 
                 "YearOfScan",
                 "MeanFramewiseDisplacement.KKI",
-                "MeanFramewiseDisplacement",
-                "MaxFramewiseDisplacement.KKI",
-                "MaxFramewiseDisplacement")
+                "MeanFramewiseDisplacement")
 
 qcMelt <- reshape2::melt(dat3[, allVariables],
                          id.vars=names(dat3)[which(names(dat3) %in%  idVariables)], 
@@ -125,10 +121,9 @@ completeCases$Sex <- relevel(as.factor(completeCases$Sex), "M")
 ```
 
 ```{r}
-#mean and max FD are different for lenient and strict because some frames at the beginning and/or end of the scan are excluded for scans to pass lenient motion QC
+#mean FD is different for lenient and strict because some frames at the beginning and/or end of the scan are excluded for scans to pass lenient motion QC
 completeCases$MeanFramewiseDisplacement[completeCases$Motion.Exclusion.Level=="Lenient"]=completeCases$MeanFramewiseDisplacement.KKI[completeCases$Motion.Exclusion.Level=="Lenient"]
 
-completeCases$MaxFramewiseDisplacement[completeCases$Motion.Exclusion.Level=="Lenient"]=completeCases$MaxFramewiseDisplacement.KKI[completeCases$Motion.Exclusion.Level=="Lenient"] 
 
 ```
 
@@ -145,9 +140,9 @@ phenoVariables <- c("ID", "PrimaryDiagnosis",
                     "AgeAtScan", 
                     "WISC.GAI", "SES.Family",
                     "Motion.Exclusion.Level", "Included", "Sex",
-                    "MeanFramewiseDisplacement" ,"MaxFramewiseDisplacement")
+                    "MeanFramewiseDisplacement")
 
-phenoIDs <- c("ID", "PrimaryDiagnosis", "Motion.Exclusion.Level", "Included", "Sex", "SES.Family", "MeanFramewiseDisplacement" ,"MaxFramewiseDisplacement")
+phenoIDs <- c("ID", "PrimaryDiagnosis", "Motion.Exclusion.Level", "Included", "Sex", "SES.Family", "MeanFramewiseDisplacement")
 
 aim1 <- reshape2::melt(completeCases[, phenoVariables],
                          id.vars=names(completeCases)[which(names(completeCases) %in% phenoIDs)])
@@ -163,6 +158,7 @@ aim1G <- group_by(aim1, PrimaryDiagnosis, Motion.Exclusion.Level, Included, vari
 #### Fit univarate GAMs using data from all children (those with usable rsfMRI data and those with unusable rsfMRI data)
 
 ```{r}
+#For Motion.Exclusion.Level=None, all children are included
 meanFDtib <- tibble(aim1) %>% 
   filter(Included=="Included")
 
@@ -179,7 +175,7 @@ nested_gams_all <- meanFDNest %>%
 nested_gams_all <- nested_gams_all %>% 
            mutate(LB = map(data, ~round(min(na.omit(.x$value)))),
                   UB = map(data, ~round(max(na.omit(.x$value)))),
-                  range = map2(LB, UB, ~seq(from=.x, to=.y, by=1)),
+                  range = map2(LB, UB, ~seq(from=.x, to=.y, by=.1)),
                   #sex = map(value, ~rep(0, length=length(value))),
                   #ses = map(value, ~rep(0, length=length(value))),
                   fit.data = map(range, ~data.frame(value = .x)),
@@ -218,17 +214,20 @@ maxX = nested_gams %>%
 ados <- nested_gams %>% 
   filter(variable=="ADOS") %>% 
   select("variable", "range", "fit", "lCI", "hCI", "LB", "UB") %>% 
-  unnest(c(range, fit, lCI, hCI))
+  unnest(c(range, fit, lCI, hCI, LB, UB))
 
 
 p_ados <- ggplot(ados, aes(x=range, y=fit))+
   geom_line(aes(),size=1.2)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
   labs(x='', y='mean FD')+  
-  scale_x_continuous(expand = c(0, 0))+ 
+  scale_x_continuous(expand = c(0, 0), limits = c(ados$LB[1], ados$UB[1]))+  
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1.75), breaks=seq(0, 1.75, by=.25))+
   gam_theme+
   ggtitle("ADOS")+
   theme(plot.title = element_text(size = 11, hjust = 0.5))
+
+#top_title = cowplot::get_title(p_ados + theme(plot.title = element_text(size = 11, hjust = 0.5)))
 
 ```
 
@@ -245,6 +244,7 @@ p_srs <- ggplot(srs, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
   labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0))+
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 1.75), breaks=seq(0, 1.75, by=.25))+
   gam_theme+
   ggtitle("SRS")+
   theme(plot.title = element_text(size = 11, hjust = 0.5))+
@@ -265,6 +265,7 @@ p_in <- ggplot(ina, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
   labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1.75), breaks=seq(0, 1.75, by=.25))+
   gam_theme+
   ggtitle("Inattention")+
   theme(plot.title = element_text(size = 11, hjust = 0.5))+
@@ -285,6 +286,7 @@ p_hi <- ggplot(hi, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
   labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1.75), breaks=seq(0, 1.75, by=.25))+
   gam_theme+
   ggtitle("Hyperactivity")+
   theme(plot.title = element_text(size = 11, hjust = 0.5))+
@@ -304,6 +306,7 @@ p_mo <- ggplot(mo, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
   labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1.75), breaks=seq(0, 1.75, by=.25))+
   gam_theme+
   ggtitle("Motor Overflow")+
   theme(plot.title = element_text(size = 11, hjust = 0.5))+
@@ -323,6 +326,7 @@ p_age <- ggplot(age, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
   labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1.75), breaks=seq(0, 1.75, by=.25))+
   gam_theme+
   ggtitle("Age")+
   theme(plot.title = element_text(size = 11, hjust = 0.5))+
@@ -342,6 +346,7 @@ p_gai <- ggplot(gai, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), linetype='blank', alpha=0.2)+  
   labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1.75), breaks=seq(0, 1.75, by=.25))+
   gam_theme+
   ggtitle("GAI")+
   theme(plot.title = element_text(size = 11, hjust = 0.5))+
@@ -375,16 +380,16 @@ den_theme = theme(
 ```{r}
 ddata <- nested_gams %>% 
   filter(variable=="ADOS") %>% 
-  select("variable", "data") %>% 
-  unnest(data) %>% 
+  select("variable", "data", "LB", "UB") %>% 
+  unnest(data, LB, UB) %>% 
   filter(PrimaryDiagnosis=="ASD")
 
 ddata$PrimaryDiagnosis <- droplevels(ddata$PrimaryDiagnosis)
 
 d_ados=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
   geom_density(alpha=0.5, inherit.aes=TRUE)+  
-  scale_x_continuous(expand = c(0, 0))+  
-  scale_y_continuous(expand = c(0, 0), limits = c(0, .09), breaks=seq(0, .08, by=.02))+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB[1], ddata$UB[1]), breaks=seq(0, ddata$UB[1], by=5))+  
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .1), breaks=seq(0, .1, by=.05))+  
   labs(x='', y='Density')+
   scale_fill_manual(values = c("#FDE599"))+ 
   scale_color_manual(values = c("#E9D38D"))+ 
@@ -396,13 +401,13 @@ d_ados=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis)
 ```{r}
 ddata <- nested_gams %>% 
   filter(variable=="SRS") %>% 
-  select("variable", "data") %>% 
-  unnest(data)
+  select("variable", "data", "LB", "UB") %>% 
+  unnest(data, LB, UB)
 
 d_srs=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
   geom_density(alpha=0.5, inherit.aes=TRUE)+  
-  scale_x_continuous(expand = c(0, 0), limits=c(0,max(srs$range)),breaks = seq(0, 100 , by = 50))+  
-  scale_y_continuous(expand = c(0, 0))+  
+  scale_x_continuous(expand = c(0, 0), limits=c(0, ddata$UB[1]),breaks = seq(0, 100 , by = 50))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .05), breaks=seq(0, .06, by=.02))+  
   scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
   scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
   theme(panel.grid.major = element_blank(), 
@@ -424,7 +429,7 @@ ddata <- nested_gams %>%
 d_in=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
   geom_density(alpha=0.5, inherit.aes=TRUE)+  
   scale_x_continuous(expand = c(0, 0))+  
-  scale_y_continuous(expand = c(0, 0))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .18), breaks=seq(0, .18, by=.06))+ 
   scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
   scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
   labs(x='')+  
@@ -448,7 +453,7 @@ ddata <- nested_gams %>%
 d_hi=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
   geom_density(alpha=0.5, inherit.aes=TRUE)+  
   scale_x_continuous(expand = c(0, 0))+  
-  scale_y_continuous(expand = c(0, 0))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .3), breaks=seq(0, .3, by=.15))+ 
   scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
   scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
   theme(panel.grid.major = element_blank(), 
@@ -470,7 +475,7 @@ ddata <- nested_gams %>%
 d_mo=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
   geom_density(alpha=0.5, inherit.aes=TRUE)+  
   scale_x_continuous(expand = c(0, 0))+  
-  scale_y_continuous(expand = c(0, 0))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .08), breaks=seq(0, .08, by=.04))+ 
   theme(axis.title.y = element_blank())+
   scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
   scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
@@ -493,7 +498,7 @@ ddata <- nested_gams %>%
 d_age=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
   geom_density(alpha=0.5, inherit.aes=TRUE)+  
   scale_x_continuous(expand = c(0, 0), limits=c(8,13), breaks = seq(8, 13 , by = 1))+  
-  scale_y_continuous(expand = c(0, 0), limits=c(0,.29), breaks=seq(0, .25, by = .05))+ 
+  scale_y_continuous(expand = c(0, 0), limits=c(0,.32), breaks=seq(0, .3, by = .16))+ 
   scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
   scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
   theme(panel.grid.major = element_blank(), 
@@ -509,13 +514,13 @@ d_age=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))
 ```{r}
 ddata <- nested_gams %>% 
   filter(variable=="GAI") %>% 
-  select("variable", "data") %>% 
-  unnest(data)
+  select("variable", "data", "LB", "UB") %>% 
+  unnest(data, LB, UB)
 
 d_gai=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
   geom_density(alpha=0.5, inherit.aes=TRUE)+  
-  scale_x_continuous(expand = c(0, 0))+  
-  scale_y_continuous(expand = c(0, 0), limits = c(0, .035), breaks=seq(0., .03, by=.01))+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB[1], ddata$UB))+  
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .04), breaks=seq(0., .04, by=.02))+  
   scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
   scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
   
@@ -530,6 +535,24 @@ hist_legend = cowplot::get_legend(d_gai + guides(color = guide_legend(nrow = 1))
 
 ```
 
+#### combine gam plots with densities & print
+```{r, fig.width=10, fig.height=6}
+
+top_row <- cowplot::plot_grid(p_ados, p_srs, p_in, p_hi, p_mo, p_age, p_gai, ncol=7, 
+                              rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+second_row <- cowplot::plot_grid(d_ados, d_srs, d_in, d_hi, d_mo, d_age, d_gai, ncol=7, 
+                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+
+png("./CovariatesAndRS-fMRIUsability/fig_meanFD_allGAM_TD_ASD_cc_none.png",width=10,height=5,units="in",res=200)
+cowplot::plot_grid(top_row, NULL, 
+                   second_row, NULL, 
+                   hist_legend, nrow=5, rel_heights=c( 1, -.01, 
+                                                       .5, -.05, .1))
+dev.off()
+
+
+```
+
 
 #### Figure 2a top. Probability of exclusion as a function of ADOS
 ```{r}
@@ -538,19 +561,24 @@ nested_gams$Motion.Exclusion.Level <- droplevels(nested_gams$Motion.Exclusion.Le
 
 nested_gams <- merge(nested_gams, maxX, by="variable")
 
-ados <- nested_gams %>% 
+temp <- nested_gams %>% 
   filter(variable=="ADOS") %>% 
   select("variable", "range", "fit", "lCI", "hCI", "LB.y", "UB.y") %>% 
   unnest(c(range, fit, lCI, hCI, LB.y, UB.y))
 
 
-p_ados_l <- ggplot(ados, aes(x=range, y=fit))+
+p_ados_l <- ggplot(temp, aes(x=range, y=fit))+
   geom_line(aes(), color = "#9FB0CC", size=1.2)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#9FB0CC", linetype='blank', alpha=0.2)+  
   labs(x='', y='mean FD')+  
-  scale_x_continuous(expand = c(0, 0), limits = c(ados$LB.y[1], ados$UB.y[1]))+ 
+  scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .5), breaks=seq(0, .5, by=.25))+
   gam_theme+
+  ggtitle("Lenient")+
   theme(plot.title = element_blank())
+  
+
+second_title = cowplot::get_title(p_ados_l + theme(plot.title = element_text(size = 11, hjust = 0.5)))
 
 
 ```
@@ -568,6 +596,7 @@ p_srs_l <- ggplot(temp, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#9FB0CC", linetype='blank', alpha=0.2)+ 
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .5), breaks=seq(0, .5, by=.25))+
   gam_theme+
   theme(plot.title = element_blank())+
   theme(axis.title.y = element_blank())
@@ -588,6 +617,7 @@ p_in_l <- ggplot(temp, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#9FB0CC", linetype='blank', alpha=0.2)+ 
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .5), breaks=seq(0, .5, by=.25))+
   gam_theme+
   theme(plot.title = element_blank())+
   theme(axis.title.y = element_blank())
@@ -607,6 +637,7 @@ p_hi_l <- ggplot(temp, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#9FB0CC", linetype='blank', alpha=0.2)+ 
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .5), breaks=seq(0, .5, by=.25))+
   gam_theme+
   theme(plot.title = element_blank())+
   theme(axis.title.y = element_blank())
@@ -627,6 +658,7 @@ p_mo_l <- ggplot(temp, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#9FB0CC", linetype='blank', alpha=0.2)+ 
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .5), breaks=seq(0, .5, by=.25))+
   gam_theme+
   theme(plot.title = element_blank())+
   theme(axis.title.y = element_blank())
@@ -646,6 +678,7 @@ p_age_l <- ggplot(temp, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#9FB0CC", linetype='blank', alpha=0.2)+ 
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .5), breaks=seq(0, .5, by=.25))+
   gam_theme+
   theme(plot.title = element_blank())+
   theme(axis.title.y = element_blank())
@@ -665,11 +698,189 @@ p_gai_l <- ggplot(temp, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#9FB0CC", linetype='blank', alpha=0.2)+ 
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .5), breaks=seq(0, .5, by=.25))+
   scale_color_manual("#9FB0CC")+
   scale_fill_manual("#9FB0CC")+
   gam_theme+
   theme(plot.title = element_blank())+
   theme(axis.title.y = element_blank())
+
+```
+
+
+#### Figure 2a bottom. ADOS density
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="ADOS") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y)) %>% 
+  filter(PrimaryDiagnosis=="ASD")
+
+ddata$PrimaryDiagnosis <- droplevels(ddata$PrimaryDiagnosis)
+
+d_ados_l=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .1), breaks=seq(0, .1, by=.05))+  
+  labs(x='', y='Density')+
+  scale_fill_manual(values = c("#FDE599"))+ 
+  scale_color_manual(values = c("#E9D38D"))+ 
+  den_theme
+
+```
+
+#### Figure 2b bottom. SRS density
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="SRS") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y))
+
+d_srs_l=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .05), breaks=seq(0, .06, by=.02))+  
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="Inattention") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y))
+
+d_in_l=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .18), breaks=seq(0, .18, by=.06))+ 
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="Hyperactivity") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y))
+
+d_hi_l=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .3), breaks=seq(0, .3, by=.15))+   
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="Motor Overflow") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y))
+
+d_mo_l=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .08), breaks=seq(0, .08, by=.04))+  
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="Age") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y))
+
+d_age_l=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .32), breaks=seq(0, .3, by=.16))+ 
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="GAI") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y))
+
+d_gai_l=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .04), breaks=seq(0, .04, by=.02))+  
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+#### combine gam plots with densities & print
+```{r, fig.width=11, fig.height=10}
+
+top_row <- cowplot::plot_grid(p_ados, p_srs, p_in, p_hi, p_mo, p_age, p_gai, ncol=7, 
+                              rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+second_row <- cowplot::plot_grid(d_ados, d_srs, d_in, d_hi, d_mo, d_age, d_gai, ncol=7, 
+                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+
+third_row <- cowplot::plot_grid(p_ados_l, p_srs_l, p_in_l, p_hi_l, p_mo_l, p_age_l, p_gai_l, ncol=7, 
+                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+
+bottom_row <- cowplot::plot_grid(d_ados_l, d_srs_l, d_in_l, d_hi_l, d_mo_l, d_age_l, d_gai_l, ncol=7, 
+                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+
+png("./CovariatesAndRS-fMRIUsability/fig_meanFD_allGAM_TD_ASD_cc_2levels.png",width=11,height=10,units="in",res=200)
+cowplot::plot_grid(top_row, NULL, 
+                   second_row, NULL, 
+                   third_row, NULL, 
+                   bottom_row, NULL, 
+                   hist_legend, nrow=9, rel_heights=c( 1, -.05, 
+                                                        .5, -.05, 
+                                                        1, -.05, 
+                                                       .5, -.07, .1))
+dev.off()
+
 
 ```
 
@@ -691,9 +902,13 @@ p_ados_s <- ggplot(ados, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#f55154", linetype='blank', alpha=0.2)+  
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(ados$LB.y[1], ados$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0),  limits = c(.08, .18), breaks=seq(.08, .18, by=.02))+ 
   gam_theme+
-  theme(plot.title = element_blank())+
-  theme(axis.title.y = element_blank())
+  ggtitle("Strict")+
+  theme(plot.title = element_blank())
+
+third_title = cowplot::get_title(p_ados_s + theme(plot.title = element_text(size = 11, hjust = 0.5)))
+
 
 ```
 
@@ -710,6 +925,7 @@ p_srs_s <- ggplot(temp, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#f55154", linetype='blank', alpha=0.2)+  
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0),  limits = c(.08, .18), breaks=seq(.08, .18, by=.02))+ 
   gam_theme+
   theme(plot.title = element_blank())+
   theme(axis.title.y = element_blank())
@@ -729,6 +945,7 @@ p_in_s <- ggplot(temp, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#f55154", linetype='blank', alpha=0.2)+  
   labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0),  limits = c(.08, .18), breaks=seq(.08, .18, by=.02))+ 
   gam_theme+
   theme(plot.title = element_blank())+
   theme(axis.title.y = element_blank())
@@ -748,6 +965,7 @@ p_hi_s <- ggplot(temp, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#f55154", linetype='blank', alpha=0.2)+  
   labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0),  limits = c(.08, .18), breaks=seq(.08, .18, by=.02))+ 
   gam_theme+
   theme(plot.title = element_blank())+
   theme(axis.title.y = element_blank())
@@ -767,6 +985,7 @@ p_mo_s <- ggplot(temp, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#f55154", linetype='blank', alpha=0.2)+  
   labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0),  limits = c(.08, .18), breaks=seq(.08, .18, by=.02))+ 
   gam_theme+
   theme(plot.title = element_blank())+
   theme(axis.title.y = element_blank())
@@ -785,6 +1004,7 @@ p_age_s <- ggplot(temp, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#f55154", linetype='blank', alpha=0.2)+  
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0),  limits = c(.08, .18), breaks=seq(.08, .18, by=.02))+ 
   gam_theme+
   theme(plot.title = element_blank())+
   theme(axis.title.y = element_blank())
@@ -803,6 +1023,7 @@ p_gai_s <- ggplot(temp, aes(x=range, y=fit))+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#f55154", linetype='blank', alpha=0.2)+  
   labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
+  scale_y_continuous(expand = c(0, 0),  limits = c(.08, .18), breaks=seq(.08, .18, by=.02))+ 
   scale_color_manual("#9FB0CC")+
   scale_fill_manual("#9FB0CC")+
   gam_theme+
@@ -811,31 +1032,195 @@ p_gai_s <- ggplot(temp, aes(x=range, y=fit))+
 
 ```
 
+#### Figure 2a bottom. ADOS density
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="ADOS") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y)) %>% 
+  filter(PrimaryDiagnosis=="ASD")
 
+ddata$PrimaryDiagnosis <- droplevels(ddata$PrimaryDiagnosis)
 
-#### combine gam plots with densities & print
-```{r, fig.width=12, fig.height=10}
-
-top_row <- cowplot::plot_grid(p_ados, p_srs, p_in, p_hi, p_mo, p_age, p_gai, ncol=7, 
-                              rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
-second_row <- cowplot::plot_grid(p_ados_l, p_srs_l, p_in_l, p_hi_l, p_mo_l, p_age_l, p_gai_l, ncol=7, 
-                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
-
-third_row <- cowplot::plot_grid(p_ados_s, p_srs_s, p_in_s, p_hi_s, p_mo_s, p_age_s, p_gai_s, ncol=7, 
-                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
-
-bottom_row <- cowplot::plot_grid(d_ados, d_srs, d_in, d_hi, d_mo, d_age, d_gai, ncol=7, 
-                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
-
-png("./CovariatesAndRS-fMRIUsability/fig_meanFD_allGAM_TD_ASD_cc_levels.png",width=12,height=10,units="in",res=200)
-cowplot::plot_grid(p_legend, top_row, NULL, second_row, NULL, third_row, NULL, bottom_row, NULL, 
-                   hist_legend, nrow=10, rel_heights=c(.1, 1, -.05, 1, -.05, 1, -.05, .5, -.07, .1))
-dev.off()
-
-cowplot::plot_grid(p_legend, top_row, NULL, second_row, NULL, third_row, NULL, bottom_row, NULL, 
-                   hist_legend, nrow=10, rel_heights=c(.1, 1, -.05, 1, -.05, 1, -.05, .5, -.07, .1))
+d_ados_s=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0), limits = c(0, .1), breaks=seq(0, .1, by=.05))+  
+  labs(x='', y='Density')+
+  scale_fill_manual(values = c("#FDE599"))+ 
+  scale_color_manual(values = c("#E9D38D"))+ 
+  den_theme
 
 ```
 
-**Figure 2. rs-fMRI exclusion probability changes with phenotype and age but not SES.** Univariate analysis of rs-fMRI exclusion probability as a function of participant characteristics. From left to right: Autism Diagnostic Observation Schedule (ADOS), social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow, age, general ability index (GAI), and socioeconomic status (SES) using the lenient (light blue lines, all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Lenient"]), digits=2))`), and strict (red lines) motion quality control (all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Strict"]), digits = 2))`). Variable distributions for each diagnosis group (included and excluded scans) are displayed across the bottom panel (TD=typically developing, green; ASD=autism spectrum disorder, yellow).
+#### Figure 2b bottom. SRS density
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="SRS") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y))
+
+d_srs_s=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .05), breaks=seq(0, .06, by=.02))+  
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="Inattention") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y))
+
+d_in_s=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .18), breaks=seq(0, .18, by=.06))+ 
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="Hyperactivity") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y))
+
+d_hi_s=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .3), breaks=seq(0, .3, by=.15))+   
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="Motor Overflow") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y))
+
+d_mo_s=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .08), breaks=seq(0, .08, by=.04))+  
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="Age") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y))
+
+d_age_s=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .32), breaks=seq(0, .3, by=.16))+ 
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+```{r}
+ddata <- nested_gams %>% 
+  filter(variable=="GAI") %>% 
+  select("variable", "data", "LB.y", "UB.y") %>% 
+  unnest(c(data, LB.y, UB.y))
+
+d_gai_s=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+  
+  geom_density(alpha=0.5, inherit.aes=TRUE)+  
+  scale_x_continuous(expand = c(0, 0), limits = c(ddata$LB.y[1], ddata$UB.y[1]))+  
+  scale_y_continuous(expand = c(0, 0),  limits = c(0, .04), breaks=seq(0, .04, by=.02))+  
+  scale_fill_manual(labels=c('TD','ASD'), values = c("#009E73", "#FDE599"))+
+  scale_color_manual(labels=c('TD','ASD'), values = c("#05634a", "#E9D38D"))+
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        axis.line = element_line(size=.5), panel.border = element_blank())+  
+  den_theme+
+  theme(axis.title.y = element_blank())+
+  labs(x='')
+
+```
+
+#### combine gam plots with densities & print
+```{r, fig.width=11, fig.height=10}
+
+top_row <- cowplot::plot_grid(p_ados, p_srs, p_in, p_hi, p_mo, p_age, p_gai, ncol=7, 
+                              rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+second_row <- cowplot::plot_grid(d_ados, d_srs, d_in, d_hi, d_mo, d_age, d_gai, ncol=7, 
+                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+
+third_row <- cowplot::plot_grid(p_ados_l, p_srs_l, p_in_l, p_hi_l, p_mo_l, p_age_l, p_gai_l, ncol=7, 
+                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+
+fourth_row <- cowplot::plot_grid(d_ados_l, d_srs_l, d_in_l, d_hi_l, d_mo_l, d_age_l, d_gai_l, ncol=7, 
+                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+
+fifth_row <- cowplot::plot_grid(p_ados_s, p_srs_s, p_in_s, p_hi_s, p_mo_s, p_age_s, p_gai_s, ncol=7, 
+                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+
+sixth_row <- cowplot::plot_grid(d_ados_s, d_srs_s, d_in_s, d_hi_s, d_mo_s, d_age_s, d_gai_s, ncol=7, 
+                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+
+
+png("./CovariatesAndRS-fMRIUsability/fig_meanFD_allGAM_TD_ASD_cc_3levels.png",width=11,height=11,units="in",res=200)
+cowplot::plot_grid(top_row, NULL, 
+                   second_row, NULL, 
+                   third_row, NULL, 
+                   fourth_row, NULL, 
+                   fifth_row, NULL,
+                   sixth_row, NULL,
+                   hist_legend, nrow=13, rel_heights=c( 1, -.02, 
+                                                        .5, -.05, 
+                                                        1, -.02, 
+                                                        .5, -.05,
+                                                        1, -.02,
+                                                       .5, -.07, .1))
+dev.off()
+
+
+```
+
+
+
+
+**Figure. mean FD changes with phenotype and age.** Univariate analysis of mean framewise displacement (FD) as a function of participant characteristics. From left to right: Autism Diagnostic Observation Schedule (ADOS), social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow, age, general ability index (GAI), and socioeconomic status (SES) using all participants with usable and unusable data (black lines),  participants passing lenient (light blue lines, all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Lenient"]), digits=2))`), and strict (red lines) motion quality control (all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Strict"]), digits = 2))`). Variable distributions for each diagnosis group (included and excluded scans) are displayed across the bottom panel (TD=typically developing, green; ASD=autism spectrum disorder, yellow).
 
