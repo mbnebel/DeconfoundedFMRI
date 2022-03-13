@@ -170,14 +170,15 @@ meanFDNest <- meanFDtib %>%
 nested_gams_all <- meanFDNest %>%
   mutate(model = map(data, ~mgcv::gam(MeanFramewiseDisplacement ~ s(value, k=-1),
                                       data = na.omit(.x), 
-                                      method="REML")))
-#average SES and sex both 0
+                                      method="REML")),
+         coefs = map(model, tidy, conf.int = FALSE),
+         Rsq = map_dbl(model, ~summary(.)$r.sq)) %>% 
+  unnest(coefs)
+
 nested_gams_all <- nested_gams_all %>% 
            mutate(LB = map(data, ~round(min(na.omit(.x$value)))),
                   UB = map(data, ~round(max(na.omit(.x$value)))),
                   range = map2(LB, UB, ~seq(from=.x, to=.y, by=.1)),
-                  #sex = map(value, ~rep(0, length=length(value))),
-                  #ses = map(value, ~rep(0, length=length(value))),
                   fit.data = map(range, ~data.frame(value = .x)),
                   FDpredict = map2(model, fit.data, ~predict(.x, newdata = .y, se.fit=TRUE)),
                   fit = map(FDpredict, ~.x$fit),
@@ -1219,8 +1220,30 @@ dev.off()
 
 ```
 
+```{r}
+
+nested_gams_none <- nested_gams_all %>% 
+  filter(Motion.Exclusion.Level=="None")
+
+nested_gams_none$p.fdr = p.adjust(nested_gams_none$p.value, method = "BH")
+
+nested_gams_len <-  nested_gams_all %>% 
+  filter(Motion.Exclusion.Level=="Lenient")
+
+nested_gams_len$p.fdr = p.adjust(nested_gams_len$p.value, method = "BH")
+
+nested_gams_strict <-  nested_gams_all %>% 
+  filter(Motion.Exclusion.Level=="Strict")
+  
+nested_gams_strict$p.fdr = p.adjust(nested_gams_strict$p.value, method = "BH")
+#combine to print
+nested_gams_table <- rbind(nested_gams_none, nested_gams_len, nested_gams_strict)
+
+nested_gams_table[, c(1:2,6:10, 19)]
+
+```
 
 
 
-**Figure. mean FD changes with phenotype and age.** Univariate analysis of mean framewise displacement (FD) as a function of participant characteristics. From left to right: Autism Diagnostic Observation Schedule (ADOS), social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow, age, general ability index (GAI), and socioeconomic status (SES) using all participants with usable and unusable data (black lines),  participants passing lenient (light blue lines, all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Lenient"]), digits=2))`), and strict (red lines) motion quality control (all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Strict"]), digits = 2))`). Variable distributions for each diagnosis group (included and excluded scans) are displayed across the bottom panel (TD=typically developing, green; ASD=autism spectrum disorder, yellow).
+**Figure. mean FD changes with phenotype and age.** Univariate analysis of mean framewise displacement (FD) as a function of participant characteristics. From left to right: Autism Diagnostic Observation Schedule (ADOS), social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow, age, general ability index (GAI), and socioeconomic status (SES) using all participants with usable and unusable data (black lines, all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams_table$Motion.Exclusion.Level=="None"]), digits=2))`),  participants passing lenient (light blue lines, all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams_table$Motion.Exclusion.Level=="Lenient"]), digits=2))`), and strict (red lines) motion quality control (all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams_table$Motion.Exclusion.Level=="Strict"]), digits = 2))`). Variable distributions for each diagnosis group (included and excluded scans) are displayed across the bottom panel (TD=typically developing, green; ASD=autism spectrum disorder, yellow).
 
