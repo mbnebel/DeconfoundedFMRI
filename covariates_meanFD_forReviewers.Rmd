@@ -550,8 +550,8 @@ p_ados_l <- ggplot(ados, aes(x=range, y=fit))+
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(ados$LB.y[1], ados$UB.y[1]))+ 
   gam_theme+
-  ggtitle("ADOS")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
+  theme(plot.title = element_blank())
+
 
 ```
 
@@ -569,8 +569,9 @@ p_srs_l <- ggplot(temp, aes(x=range, y=fit))+
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
   gam_theme+
-  ggtitle("SRS")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
+
 
 ```
 
@@ -588,8 +589,8 @@ p_in_l <- ggplot(temp, aes(x=range, y=fit))+
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
   gam_theme+
-  ggtitle("Inattention")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
 
 ```
 
@@ -607,8 +608,8 @@ p_hi_l <- ggplot(temp, aes(x=range, y=fit))+
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
   gam_theme+
-  ggtitle("Hyperactivity")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
 
 ```
 
@@ -627,8 +628,8 @@ p_mo_l <- ggplot(temp, aes(x=range, y=fit))+
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
   gam_theme+
-  ggtitle("Motor Overflow")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
 
 ```
 
@@ -646,8 +647,8 @@ p_age_l <- ggplot(temp, aes(x=range, y=fit))+
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
   gam_theme+
-  ggtitle("Age")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
 
 ```
 
@@ -667,8 +668,8 @@ p_gai_l <- ggplot(temp, aes(x=range, y=fit))+
   scale_color_manual("#9FB0CC")+
   scale_fill_manual("#9FB0CC")+
   gam_theme+
-  ggtitle("GAI")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
 
 ```
 
@@ -691,8 +692,8 @@ p_ados_s <- ggplot(ados, aes(x=range, y=fit))+
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(ados$LB.y[1], ados$UB.y[1]))+ 
   gam_theme+
-  ggtitle("ADOS")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
 
 ```
 
@@ -710,8 +711,8 @@ p_srs_s <- ggplot(temp, aes(x=range, y=fit))+
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
   gam_theme+
-  ggtitle("SRS")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
 
 ```
 
@@ -726,11 +727,11 @@ temp <- nested_gams %>%
 p_in_s <- ggplot(temp, aes(x=range, y=fit))+
   geom_line(aes(), color = "#f55154", size=1.2)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#f55154", linetype='blank', alpha=0.2)+  
-  labs(x='', y='mean FD')+  
+  labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
   gam_theme+
-  ggtitle("Inattention")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
 
 ```
 
@@ -745,12 +746,11 @@ temp <- nested_gams %>%
 p_hi_s <- ggplot(temp, aes(x=range, y=fit))+
   geom_line(aes(), color = "#f55154", size=1.2)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#f55154", linetype='blank', alpha=0.2)+  
-  labs(x='', y='mean FD')+  
+  labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
   gam_theme+
-  ggtitle("Hyperactivity")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
-
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
 ```
 
 
@@ -765,12 +765,11 @@ temp <- nested_gams %>%
 p_mo_s <- ggplot(temp, aes(x=range, y=fit))+
   geom_line(aes(), color = "#f55154", size=1.2)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#f55154", linetype='blank', alpha=0.2)+  
-  labs(x='', y='mean FD')+  
+  labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
   gam_theme+
-  ggtitle("Motor Overflow")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
-
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
 ```
 
 #### Age
@@ -787,9 +786,8 @@ p_age_s <- ggplot(temp, aes(x=range, y=fit))+
   labs(x='', y='mean FD')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
   gam_theme+
-  ggtitle("Age")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
-
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
 ```
 
 #### GAI
@@ -803,13 +801,13 @@ temp <- nested_gams %>%
 p_gai_s <- ggplot(temp, aes(x=range, y=fit))+
   geom_line(aes(), color = "#f55154", size=1.2)+theme_bw()+
   geom_ribbon(aes(ymin=lCI, ymax=hCI), fill = "#f55154", linetype='blank', alpha=0.2)+  
-  labs(x='', y='mean FD')+  
+  labs(x='', y='')+  
   scale_x_continuous(expand = c(0, 0), limits = c(temp$LB.y[1], temp$UB.y[1]))+ 
   scale_color_manual("#9FB0CC")+
   scale_fill_manual("#9FB0CC")+
   gam_theme+
-  ggtitle("GAI")+
-  theme(plot.title = element_text(size = 11, hjust = 0.5))
+  theme(plot.title = element_blank())+
+  theme(axis.title.y = element_blank())
 
 ```
 
@@ -819,15 +817,15 @@ p_gai_s <- ggplot(temp, aes(x=range, y=fit))+
 ```{r, fig.width=12, fig.height=10}
 
 top_row <- cowplot::plot_grid(p_ados, p_srs, p_in, p_hi, p_mo, p_age, p_gai, ncol=7, 
-                              rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
+                              rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
 second_row <- cowplot::plot_grid(p_ados_l, p_srs_l, p_in_l, p_hi_l, p_mo_l, p_age_l, p_gai_l, ncol=7, 
-                                 rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
+                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
 
 third_row <- cowplot::plot_grid(p_ados_s, p_srs_s, p_in_s, p_hi_s, p_mo_s, p_age_s, p_gai_s, ncol=7, 
-                                 rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
+                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
 
 bottom_row <- cowplot::plot_grid(d_ados, d_srs, d_in, d_hi, d_mo, d_age, d_gai, ncol=7, 
-                                 rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
+                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
 
 png("./CovariatesAndRS-fMRIUsability/fig_meanFD_allGAM_TD_ASD_cc_levels.png",width=12,height=10,units="in",res=200)
 cowplot::plot_grid(p_legend, top_row, NULL, second_row, NULL, third_row, NULL, bottom_row, NULL, 
