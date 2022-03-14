@@ -171,12 +171,14 @@ gn.p6=plot_pcorr_fun(EdgeName='r.ic14.ic21',EdgeNamePlot='IC14-IC21')
 gn.p7=plot_pcorr_fun(EdgeName='r.ic1.ic24',EdgeNamePlot='IC01-IC24')
 gn.p8=plot_pcorr_fun(EdgeName='r.ic19.ic25',EdgeNamePlot='IC19-IC25', legend=TRUE)
 
-pdf(file='./Application_Figures/DataForNineComponents_naive_drtmle_imputeCovariates.pdf')
+pdf(file='./ReviewerResponse/DataForNineComponents_naive_drtmle_imputeCovariates.pdf')
 grid.arrange(gn.p0,gn.p1,gn.p2,gn.p3,gn.p4,gn.p5,gn.p6, gn.p7, gn.p8, nrow=3)
 dev.off()
 
 
 ```
+
+
 
 #### No imputation
 
