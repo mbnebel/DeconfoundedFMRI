@@ -190,26 +190,107 @@ myChordDiagram = function(data,varname,alpha=0.20,alphaname,title) {
 ```{r}
 results.all=NULL
 for (i in 1:200) {
-  load(paste0('./Results/ic30_pc85_glm_gam_drtmle_seed',i,'.RData'))
+  load(paste0('./Results/Results_noimpute_8March2022/ic30_pc85_glm_gam_drtmle_seed',i,'.RData'))
   results.all = rbind(results.all,results.df)
 }
 rm(results.df)
 
 # second set of seeds:
+#Ben doesn't know why seed 365 failed
 results.all2=NULL
-for (i in 201:400) {
-  load(paste0('./Results/ic30_pc85_glm_gam_drtmle_seed',i,'.RData'))
+for (i in 201:401) {
+  if (i ==365) {
+    next
+  }
+  load(paste0('./Results/Results_noimpute_8March2022/ic30_pc85_glm_gam_drtmle_seed',i,'.RData'))
   results.all2 = rbind(results.all2,results.df)
 }
 rm(results.df)
 
 ```
 
+#### Compare results from two sets of 200 seeds
+```{r}
+results.ave = results.all%>%
+  group_by(EdgeName)%>%
+  summarize(mean.ASD.naive=mean(mean.ASD.naive), 
+            mean.TD.naive=mean(mean.TD.naive),
+            mean.diff.naive=mean(mean.diff.naive),
+            z.stat.ASD.naive=mean(z.stat.ASD.naive),
+            z.stat.TD.naive=mean(z.stat.TD.naive),
+            z.stat.diff.naive=mean(z.stat.diff.naive),
+            mean.ASD.SL=mean(mean.ASD.SL),
+            mean.TD.SL=mean(mean.TD.SL),
+            mean.diff.SL=mean(mean.diff.SL),
+            z.stat.ASD.SL=mean(z.stat.ASD.SL),
+            z.stat.TD.SL=mean(z.stat.TD.SL),
+            z.stat.diff.SL=mean(z.stat.diff.SL),
+            SL.naive.mean.diff=mean(abs(mean.diff.SL)-abs(mean.diff.naive)))
+
+results.ave2 = results.all2%>%
+  group_by(EdgeName)%>%
+  summarize(mean.ASD.naive=mean(mean.ASD.naive), 
+            mean.TD.naive=mean(mean.TD.naive),
+            mean.diff.naive=mean(mean.diff.naive),
+            z.stat.ASD.naive=mean(z.stat.ASD.naive),
+            z.stat.TD.naive=mean(z.stat.TD.naive),
+            z.stat.diff.naive=mean(z.stat.diff.naive),
+            mean.ASD.SL=mean(mean.ASD.SL),
+            mean.TD.SL=mean(mean.TD.SL),
+            mean.diff.SL=mean(mean.diff.SL),
+            z.stat.ASD.SL=mean(z.stat.ASD.SL),
+            z.stat.TD.SL=mean(z.stat.TD.SL),
+            z.stat.diff.SL=mean(z.stat.diff.SL),
+            SL.naive.mean.diff=mean(abs(mean.diff.SL)-abs(mean.diff.naive)))
+
+# compare two estimates:
+plot(results.ave$z.stat.diff.SL~results.ave2$z.stat.diff.SL)
+head(cbind(results.ave$z.stat.diff.SL,results.ave2$z.stat.diff.SL))
+
+# this result appears in the manuscript:
+seedCor = cor(results.ave$z.stat.diff.SL,results.ave2$z.stat.diff.SL)
+
+```
+
+The correlation between the average DRTMLE ASD-TD Z-statistics across the 153 edges was **`r toString(seedCor)`**. 
+
+
+#### Calculate FDR adjusted p values
+```{r}
+
+results.ave$p.SL = 2*(1-pnorm(abs(results.ave$z.stat.diff.SL)))
+results.ave$p.SL.fdr = p.adjust(results.ave$p.SL,method='BH')
+
+results.ave2$p.SL = 2*(1-pnorm(abs(results.ave2$z.stat.diff.SL)))
+results.ave2$p.SL.fdr = p.adjust(results.ave2$p.SL,method='BH')
+
+```
+
+#### Compare the selected edges at FDR=0.05 in the two sets of seeds:
+```{r}
+results.ave[results.ave$p.SL.fdr<0.05,c('EdgeName')]
+results.ave2[results.ave2$p.SL.fdr<0.05,c('EdgeName')]
+
+```
+
+`r toString(sum(results.ave$p.SL.fdr<0.05))` were selected using DRTMLE and a false discovery rate FDR=.05 in the first set of seeds and the same `r toString(sum(results.ave2$p.SL.fdr<0.05))` in the second set.
+
+
+#### Compare the selected edges at FDR=0.20 in the two sets of seeds:
+```{r}
+
+results.ave[results.ave$p.SL.fdr<0.2,c('EdgeName')]
+results.ave2[results.ave2$p.SL.fdr<0.2,c('EdgeName')]
+
+```
+
+`r toString(sum(results.ave$p.SL.fdr<0.2))` were selected using DRTMLE and a false discovery rate FDR=.20 in the first set of seeds and the same `r toString(sum(results.ave2$p.SL.fdr<0.2))` in the second set.
+
 #### Average results from all seeds
 ```{r}
 #SL = superlearner
 
-results.ave = rbind(results.all,results.all2) %>%
+results.ave = rbind(results.all, results.all2) %>%
   group_by(EdgeName) %>%
   summarize(mean.ASD.naive=round(mean(mean.ASD.naive), digits = 3),
             mean.TD.naive=round(mean(mean.TD.naive), digits = 3),
@@ -226,6 +307,8 @@ results.ave = rbind(results.all,results.all2) %>%
             SL.naive.z.stat.diff=mean(abs(z.stat.diff.SL)-abs(z.stat.diff.naive)))
 
 ```
+
+
 
 #### Add network names
 ```{r}
@@ -267,12 +350,12 @@ ggplot(pvalues, aes(x=p))+
 
 #### FDR-adjusted p values
 ```{r}
-results.ave$p.naive.fdr = round(p.adjust(results.ave$p.naive,method='BH'), digits = 3)
-results.ave$p.SL.fdr = round(p.adjust(results.ave$p.SL,method='BH'), digits = 3)
+results.ave$p.naive.fdr = round(p.adjust(results.ave$p.naive,method='BH'), digits = 4)
+results.ave$p.SL.fdr = round(p.adjust(results.ave$p.SL,method='BH'), digits = 4)
 
 ```
 
-#### Determine edges showing a significant group difference FDR=.05
+#### Determine edges showing a significant group difference FDR=.05 averaged across all 400 seeds
 ```{r}
 fdr05.edges.SL = which(results.ave$p.SL.fdr<.05) 
 fdr05.edges.naive = which(results.ave$p.naive.fdr<.05) 
@@ -316,7 +399,7 @@ for(iimg in seq(1:nrow(DATA))) {
 
 #### Naive ASD-TD Z-Statistic FDR=0.05
 ```{r, fig.width=5, fig.height=5}
-png("Application_Figures/Naive_zstat_groupdifference_fdr05.png",width=5,height=5,units="in",res=200)
+png("Application_Figures/Naive_zstat_groupdifference_fdr05_noImpute.png",width=5,height=5,units="in",res=200)
 
 myChordDiagram(data=results.ave,varname='z.stat.diff.naive',alpha=0.05,alphaname='p.naive.fdr', title='')
 dev.off()
@@ -329,7 +412,7 @@ circos.clear()
 #### DRTMLE ASD-TD Z-Statistic FDR=0.05
 ```{r, fig.width=5, fig.height=5}
 
-png("Application_Figures/DRTMLE_zstat_groupdifference_fdr05.png",width=5,height=5,units="in",res=200)
+png("Application_Figures/DRTMLE_zstat_groupdifference_fdr05_noImpute.png",width=5,height=5,units="in",res=200)
 myChordDiagram(data=results.ave,varname='z.stat.diff.SL',alpha=0.05,alphaname='p.SL.fdr',title='')
 dev.off()
 
@@ -339,37 +422,22 @@ circos.clear()
 
 #### Print a and b together for report
 ```{r, echo=FALSE}
-myChordDiagram(data=results.ave,varname='z.stat.diff.naive',alpha=0.05,alphaname='p.naive.fdr',title='A. Naive Z-Statistic, ASD-TD, FDR=0.05')
+myChordDiagram(data=results.ave, varname='z.stat.diff.naive', alpha=0.05, alphaname='p.naive.fdr', title='A. Naive Z-Statistic, ASD-TD, FDR=0.05')
 
 circos.clear()
 
-myChordDiagram(data=results.ave,varname='z.stat.diff.SL',alpha=0.05,alphaname='p.SL.fdr',title='B. DRTMLE Z-Statistic, ASD-TD, FDR=0.05')
+myChordDiagram(data=results.ave, varname='z.stat.diff.SL', alpha=0.05, alphaname='p.SL.fdr', title='B. DRTMLE Z-Statistic, ASD-TD, FDR=0.05')
 
 circos.clear()
 
-myChordDiagram(data=results.ave,varname='SL.naive.z.stat.diff',alpha=0.05,alphaname='p.SL.fdr',title='')
-
-circos.clear()
 ```
 
-#### DRTMLE-Naive ASD-TD Z-Statistic FDR=0.05
-```{r, fig.width=5, fig.height=5}
-
-png("Application_Figures/DRTMLE_Naive_zstat_groupdifference_fdr05.png",width=5,height=5,units="in",res=200)
-myChordDiagram(data=results.ave,varname='SL.naive.z.stat.diff',alpha=0.05,alphaname='p.SL.fdr',title='')
-dev.off()
-
-circos.clear()
-
-temp = filter(results.ave, p.SL.fdr<.05)
-summary(temp$SL.naive.z.stat.diff)
-
-```
+**Figure S2. The DRTMLE deconfounded group difference revealed more extensive differences than the naïve approach.** Z-statistics for autism spectrum disorder (ASD) versus typically developing (TD) using a) the na\"ive test and b) using DRTMLE. Connections are thresholded using a false discovery rate (FDR) of  0.05. Blue lines indicate ASD>TD (`r sum(results.ave$p.naive.fdr<.05 & results.ave$z.stat.diff.naive>0)` in naive, `r sum(results.ave$p.SL.fdr<.05 & results.ave$z.stat.diff.SL>0)` in DRTMLE). Red lines indicate ASD<TD (`r sum(results.ave$p.naive.fdr<.05 & results.ave$z.stat.diff.naive<0)` in naive,  `r sum(results.ave$p.SL.fdr<.05 & results.ave$z.stat.diff.SL<0)` in DRTMLE). Brain regions contributing to each independent component are illustrated and components are grouped by functional assignment. Navy nodes: control. Blue violet: default mode. Purple: salience/ventral attention. Magenta: pontomedullary/cerebellar. Coral: somatomotor. Orange: visual. Yellow: dorsal attention.
 
 #### Determine edges showing a significant group difference FDR=.20
 ```{r}
-fdr20.edges.SL = which(results.ave$p.SL.fdr<.20) 
-fdr20.edges.naive = which(results.ave$p.naive.fdr<.20) 
+fdr20.edges.SL = which(results.ave$p.SL.fdr<=.20) 
+fdr20.edges.naive = which(results.ave$p.naive.fdr<=.20) 
 
 all(fdr20.edges.naive %in% fdr20.edges.SL)
 
@@ -379,7 +447,7 @@ All edges indicated by naive approach are also indicated by DRTMLE at the FDR=0.
 #### Summary of network pairs showing a significant group difference using the naive approach, FDR=.2
 ```{r, results='asis'}
 tabfdr2n<- tableby(net1 ~ net2,
-                 data=filter(results.ave , p.naive.fdr<.2))
+                 data=filter(results.ave , p.naive.fdr<=.2))
 summary(tabfdr2n,  
         title='Network pairs showing a group difference using the naive approach, FDR=.2',digits=1, digits.p=4,digits.pct=1, numeric.simplify=TRUE, total=TRUE, test=FALSE)
 ```
@@ -387,7 +455,7 @@ summary(tabfdr2n,
 #### Summary of network pairs showing a significant group difference using DRTMLE, FDR=.2
 ```{r, results='asis'}
 tabfdr2<- tableby(net1 ~ net2,
-                 data=filter(results.ave , p.SL.fdr<.2))
+                 data=filter(results.ave , p.SL.fdr<=.2))
 summary(tabfdr2,  
         title='Network pairs showing a group difference using DRTMLE, FDR=.2',digits=1, digits.p=4,digits.pct=1, numeric.simplify=TRUE, total=TRUE, test=FALSE)
 ```
@@ -401,17 +469,14 @@ results.ave$NetworkPair <- stringr::str_c(results.ave$net1, '-', results.ave$net
 results.sigEdges = results.ave[fdr20.edges.SL, c("EdgeName", "NetworkPair",
                                                  "mean.ASD.naive", "mean.TD.naive", "z.stat.diff.naive",
                                                  "mean.ASD.SL", "mean.TD.SL", "z.stat.diff.SL",
-                                                 "SL.naive.z.stat.diff",
                                                  "p.naive.fdr", "p.SL.fdr")]
 
 results.sigEdges <- results.sigEdges[order(results.sigEdges$p.naive.fdr), ]
 
 knitr::kable(results.sigEdges, format="markdown", 
-             col.names = c("Edge", "Networks", "naive ASD mean", "naive TD mean", 
-                           "naive ASD-TD Z",
-                           "DRTMLE ASD mean", "DRTMLE TD mean", 
-                           "DRTMLE ASD-TD Z",
-                           "DRTMLE-naive ASD-TD Z",
+             col.names = c("Edge", "Networks", 
+                           "naive ASD mean", "naive TD mean",  "naive ASD-TD Z",
+                           "DRTMLE ASD mean", "DRTMLE TD mean", "DRTMLE ASD-TD Z",
                            "naive FDR-adjusted p", 
                            "DRTMLE FDR-adjusted p"))
 
@@ -427,10 +492,9 @@ Mean functional connectivity group estimates further from zero reflect stronger 
 #print(tab, type="latex")
 
 knitr::kable(results.sigEdges, "latex", linesep = "", vline = "",
-             col.names = c("Edge", "Network Pair", "naive ASD mean", "naive TD mean", 
-                           "naive ASD-TD Z",
-                           "DRTMLE ASD mean", "DRTMLE TD mean", 
-                           "DRTMLE ASD-TD Z",
+             col.names = c("Edge", "Network Pair", 
+                           "naive ASD mean", "naive TD mean", "naive ASD-TD Z",
+                           "DRTMLE ASD mean", "DRTMLE TD mean",  "DRTMLE ASD-TD Z",
                            "naive FDR-adjusted p", 
                            "DRTMLE FDR-adjusted p")) %>%
   #kableExtra::column_spec(9:10, width = "1 cm") %>% 
@@ -442,7 +506,7 @@ knitr::kable(results.sigEdges, "latex", linesep = "", vline = "",
 #### Naive ASD-TD Z-Statistic FDR=0.20
 ```{r, fig.width=5, fig.height=5}
 
-png("Application_Figures/Naive_zstat_groupdifference_fdr20.png",width=5,height=5,units="in",res=200)
+png("Application_Figures/Naive_zstat_groupdifference_fdr20_noImpute.png",width=5,height=5,units="in",res=200)
 myChordDiagram(data=results.ave,varname='z.stat.diff.naive',alpha=0.20,alphaname='p.naive.fdr', title='')
 dev.off()
 
@@ -453,7 +517,7 @@ circos.clear()
 #### DRTMLE ASD-TD Z-Statistic FDR=0.20
 ```{r, fig.width=5, fig.height=5}
 
-png("Application_Figures/DRTMLE_zstat_groupdifference_fdr20.png",width=5,height=5,units="in",res=200)
+png("Application_Figures/DRTMLE_zstat_groupdifference_fdr20_noImpute.png",width=5,height=5,units="in",res=200)
 #myChordDiagram(data=results.ave,varname='z.stat.diff.SL',alpha=0.20,alphaname='p.SL.fdr',title='B. DRTMLE Z-Statistic, ASD-TD')
 myChordDiagram(data=results.ave,varname='z.stat.diff.SL',alpha=0.20,alphaname='p.SL.fdr',title='')
 dev.off()
@@ -475,3 +539,5 @@ circos.clear()
 
 
 **Figure 5. The DRTMLE deconfounded group difference revealed more extensive differences than the naïve approach.** Z-statistics for autism spectrum disorder (ASD) versus typically developing (TD) using a) the na\"ive test and b) using DRTMLE. Connections are thresholded using a false discovery rate (FDR) of  0.20. Blue lines indicate ASD>TD (`r sum(results.ave$p.naive.fdr<.2 & results.ave$z.stat.diff.naive>0)` in naive, `r sum(results.ave$p.SL.fdr<.2 & results.ave$z.stat.diff.SL>0)` in DRTMLE). Red lines indicate ASD<TD (`r sum(results.ave$p.naive.fdr<.2 & results.ave$z.stat.diff.naive<0)` in naive,  `r sum(results.ave$p.SL.fdr<.2 & results.ave$z.stat.diff.SL<0)` in DRTMLE). Brain regions contributing to each independent component are illustrated and components are grouped by functional assignment. Navy nodes: control. Blue violet: default mode. Purple: salience/ventral attention. Magenta: pontomedullary/cerebellar. Coral: somatomotor. Orange: visual. Yellow: dorsal attention.
+
+
