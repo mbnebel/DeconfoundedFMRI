@@ -19,7 +19,7 @@ library(gridExtra)
 
 ```
 
-#### Extensive imputation
+#### Imputation of numerical covariates
 
 ```{r}
 # Examine the stability of z-statistics under different seeds:
@@ -162,7 +162,7 @@ plot_pcorr_fun = function(EdgeName,EdgeNamePlot,legend=FALSE) {
 ```{r}
 
 gn.p0=plot_pcorr_fun(EdgeName='r.ic2.ic27',EdgeNamePlot='IC02-IC27')
-gn.p1=plot_pcorr_fun(EdgeName='r.ic14.ic21',EdgeNamePlot='IC14-IC21')
+gn.p1=plot_pcorr_fun(EdgeName='r.ic14.ic19',EdgeNamePlot='IC14-IC19')
 gn.p2=plot_pcorr_fun(EdgeName='r.ic13.ic26',EdgeNamePlot='IC13-IC26')
 gn.p3=plot_pcorr_fun(EdgeName='r.ic1.ic21',EdgeNamePlot='IC01-IC21')
 gn.p4=plot_pcorr_fun(EdgeName='r.ic17.ic24',EdgeNamePlot='IC17-IC24')

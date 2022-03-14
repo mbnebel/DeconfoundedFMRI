@@ -544,7 +544,7 @@ top_row <- cowplot::plot_grid(p_ados, p_srs, p_in, p_hi, p_mo, p_age, p_gai, nco
 second_row <- cowplot::plot_grid(d_ados, d_srs, d_in, d_hi, d_mo, d_age, d_gai, ncol=7, 
                                  rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
 
-png("./CovariatesAndRS-fMRIUsability/fig_meanFD_allGAM_TD_ASD_cc_none.png",width=10,height=5,units="in",res=200)
+png("./ReviewerResponse/fig_meanFD_allGAM_TD_ASD_cc_none.png",width=10,height=5,units="in",res=200)
 cowplot::plot_grid(top_row, NULL, 
                    second_row, NULL, 
                    hist_legend, nrow=5, rel_heights=c( 1, -.01, 
@@ -1174,7 +1174,7 @@ sixth_row <- cowplot::plot_grid(d_ados_s, d_srs_s, d_in_s, d_hi_s, d_mo_s, d_age
                                  rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
 
 
-png("./CovariatesAndRS-fMRIUsability/fig_meanFD_allGAM_TD_ASD_cc_3levels.png",width=11,height=11,units="in",res=200)
+png("./ReviewerResponse/fig_meanFD_allGAM_TD_ASD_cc_3levels.png",width=11,height=11,units="in",res=200)
 cowplot::plot_grid(top_row, NULL, 
                    second_row, NULL, 
                    third_row, NULL, 
