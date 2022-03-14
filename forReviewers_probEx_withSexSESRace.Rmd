@@ -550,9 +550,9 @@ hist_legend = cowplot::get_legend(d_gai + guides(color = guide_legend(nrow = 1))
 ```{r, fig.width=10, fig.height=6}
 
 top_row <- cowplot::plot_grid(p_ados, p_srs, p_in, p_hi, p_mo, p_age, p_gai, ncol=7, 
-                              rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+                              rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
 second_row <- cowplot::plot_grid(d_ados, d_srs, d_in, d_hi, d_mo, d_age, d_gai, ncol=7, 
-                                 rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
+                                 rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
 
 png("./ReviewerResponse/fig_probExclusion_allGAM_TD_ASD_cc_sexRaceSES.png",width=10,height=6,units="in",res=200)
 cowplot::plot_grid(p_legend, top_row, NULL, 
