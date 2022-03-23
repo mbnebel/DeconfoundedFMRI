@@ -64,7 +64,7 @@ mean(Delta[A==1])
 mean(Delta[A==0])
 ```
 
-This design resulted in **`r toString(round(mean(Delta[A==0]), digits=0)*100)`%** and **`r toString(round(mean(Delta[A==1]), digits=0)*100)`%** usable data in the typically developing and ASD groups, respectively. The difference between the distribution of $W_c$ in the full sample and the distribution of $W_{usable,c}$ in the usable sample is the sampling bias caused by motion QC. Here, we have kept things simple with sampling bias in the ASD group only. 
+This design resulted in **`r toString(round(mean(Delta[A==0])*100, digits=0))`%** and **`r toString(round(mean(Delta[A==1])*100, digits=0))`%** usable data in the typically developing and ASD groups, respectively. The difference between the distribution of $W_c$ in the full sample and the distribution of $W_{usable,c}$ in the usable sample is the sampling bias caused by motion QC. Here, we have kept things simple with sampling bias in the ASD group only. 
 
 
 ```{r, fig.width = 8}
