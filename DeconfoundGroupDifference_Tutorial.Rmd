@@ -20,9 +20,9 @@ set.seed(seed, "L'Ecuyer-CMRG")
 This tutorial has two goals: 
 
 1. to show how a covariate related to data usability, ASD severity, and functional connectivity can introduce confounding
-2. to show how DRTMLE adjusts for this confounding
+2. to show how DRTMLE adjusts our associational estimand for this confounding
 
-Our parameter of interest is the difference in functional connectivity between ASD and typically developing (TD) children. For the ASD group, our goal is to calculate the mean functional connectivity across the spectrum of autism severity.
+Our parameter of interest is the average difference in functional connectivity between ASD and typically developing (TD) children. For the ASD group, our goal is to calculate the mean functional connectivity across the spectrum of autism severity.
 
 We create a variable $W_c$ that drives the confounding between data usability and functional connectivity. The idea is to create a variable similar to a measure of ASD severity, such that the distribution of $W_c$ differs by diagnosis. Let $A$ denote diagnosis, where $A=1$ denotes ASD and $A=0$ denotes TD. Then $W_c$ is log normal when $A=1$ and equal to zero when $A=0$. We also create additional covariates to make the estimation a little harder, and we call the vector of $W_c$ and the additional covariates $W$. In this example, there is confounding in the ASD functional connectivity but not in the TD functional connectivity. We could also simulate confounding in the TD functional connectivity, for example, caused by a biased distribution of ages. Here, we keep things simple and only create confounding in the ASD group, which in turn creates confounding in the difference between groups. 
 
@@ -64,7 +64,7 @@ mean(Delta[A==1])
 mean(Delta[A==0])
 ```
 
-This design resulted in **`r toString(round(mean(Delta[A==0])*100, digits=0))`%** and **`r toString(round(mean(Delta[A==1])*100, digits=0))`%** usable data in the typically developing and ASD groups, respectively. The difference between the distribution of $W_c$ in the full sample and the distribution of $W_{usable,c}$ in the usable sample is the sampling bias caused by motion QC. Here, we have kept things simple with sampling bias in the ASD group only. 
+Under this design, we have **`r toString(round(mean(Delta[A==0])*100, digits=0))`%** and **`r toString(round(mean(Delta[A==1])*100, digits=0))`%** usable data in the typically developing and ASD groups, respectively. The difference between the distribution of $W_c$ in the full sample and the distribution of $W_{usable,c}$ in the usable sample is the sampling bias caused by motion QC. Here, we have kept things simple with sampling bias in the ASD group only. 
 
 
 ```{r, fig.width = 8}
@@ -97,7 +97,7 @@ Y = xmat%*%betas_Qbar+rnorm(n1,sd=0.2)
 ```
 
 
-Next, we calculate the "true" mean functional connectivity (fconn) within the ASD group and the "true" mean within the TD group, i.e., $E[Y(1)|A=1] - E[Y(1)|A=0]$. We also calculate the effect size used in this example:
+Next, we calculate the "true" mean functional connectivity (fconn) within the ASD group and the "true" mean within the TD group, i.e., $E[Y(1)|A=1] - E[Y(1)|A=0]$. We also calculate the effect size of the ASD-TD difference used in this example:
 
 ```{r}
 library(effsize)
