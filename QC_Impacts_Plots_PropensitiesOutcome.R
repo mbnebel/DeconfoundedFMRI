@@ -1,33 +1,31 @@
 library(ggplot2)
-library(RColorBrewer)
 library(wesanderson)
 library(tidyverse)
 library(effsize)
 library(gridExtra)
-
+library(RColorBrewer)
+library(visdat)
 # stability plots, plots of the data with the naive and deconfounded mean, 
 # plots of the missingness
 
 # Examine the stability of z-statistics under different seeds:
 results.all=NULL
 for (i in 1:200) {
-  load(paste0('./Results/ic30_pc85_glm_gam_drtmle_seed',i,'.RData'))
+  load(paste0('./Results/Results_noimpute_8March2022/ic30_pc85_glm_gam_drtmle_seed',i,'.RData'))
   results.all = rbind(results.all,results.df)
 }
 rm(results.df)
 
 # second set of seeds:
 results.all2=NULL
-for (i in 201:400) {
-  load(paste0('./Results/ic30_pc85_glm_gam_drtmle_seed',i,'.RData'))
+for (i in c(201:364,366:401)) {
+  load(paste0('./Results/Results_noimpute_8March2022/ic30_pc85_glm_gam_drtmle_seed',i,'.RData'))
   results.all2 = rbind(results.all2,results.df)
 }
 rm(results.df)
 
 p=ggplot(data=results.all[order(results.all$z.stat.diff.naive),], aes(x=z.stat.diff.naive, y=z.stat.diff.SL, color=EdgeName))+
-  geom_point() +
-  theme(legend.position='none')+
-  geom_abline(slope=1,intercept=0)+
+  geom_point() + theme(legend.position='none')+geom_abline(slope=1,intercept=0)+
   scale_color_manual(values = colorRampPalette(brewer.pal(n=8,name='Accent'))(153))
 
 #+scale_color_manual(values = colorRampPalette(brewer.pal(n=12,name='Set3'))(153))
@@ -47,35 +45,17 @@ p
 # average the z-statistics:
 results.ave = results.all%>%
   group_by(EdgeName)%>%
-  summarize(mean.ASD.naive=mean(mean.ASD.naive), 
-            mean.TD.naive=mean(mean.TD.naive),
-            mean.diff.naive=mean(mean.diff.naive),
-            z.stat.ASD.naive=mean(z.stat.ASD.naive),
-            z.stat.TD.naive=mean(z.stat.TD.naive),
-            z.stat.diff.naive=mean(z.stat.diff.naive),
-            mean.ASD.SL=mean(mean.ASD.SL),
-            mean.TD.SL=mean(mean.TD.SL),
-            mean.diff.SL=mean(mean.diff.SL),
-            z.stat.ASD.SL=mean(z.stat.ASD.SL),
-            z.stat.TD.SL=mean(z.stat.TD.SL),
-            z.stat.diff.SL=mean(z.stat.diff.SL),
-            SL.naive.mean.diff=mean(abs(mean.diff.SL)-abs(mean.diff.naive)))
+  summarize(mean.ASD.naive=mean(mean.ASD.naive), mean.TD.naive=mean(mean.TD.naive),mean.diff.naive=mean(mean.diff.naive),
+            z.stat.ASD.naive=mean(z.stat.ASD.naive),z.stat.TD.naive=mean(z.stat.TD.naive),z.stat.diff.naive=mean(z.stat.diff.naive),
+            mean.ASD.SL=mean(mean.ASD.SL),mean.TD.SL=mean(mean.TD.SL),mean.diff.SL=mean(mean.diff.SL),
+            z.stat.ASD.SL=mean(z.stat.ASD.SL),z.stat.TD.SL=mean(z.stat.TD.SL),z.stat.diff.SL=mean(z.stat.diff.SL))
 
 results.ave2 = results.all2%>%
   group_by(EdgeName)%>%
-  summarize(mean.ASD.naive=mean(mean.ASD.naive), 
-            mean.TD.naive=mean(mean.TD.naive),
-            mean.diff.naive=mean(mean.diff.naive),
-            z.stat.ASD.naive=mean(z.stat.ASD.naive),
-            z.stat.TD.naive=mean(z.stat.TD.naive),
-            z.stat.diff.naive=mean(z.stat.diff.naive),
-            mean.ASD.SL=mean(mean.ASD.SL),
-            mean.TD.SL=mean(mean.TD.SL),
-            mean.diff.SL=mean(mean.diff.SL),
-            z.stat.ASD.SL=mean(z.stat.ASD.SL),
-            z.stat.TD.SL=mean(z.stat.TD.SL),
-            z.stat.diff.SL=mean(z.stat.diff.SL),
-            SL.naive.mean.diff=mean(abs(mean.diff.SL)-abs(mean.diff.naive)))
+  summarize(mean.ASD.naive=mean(mean.ASD.naive), mean.TD.naive=mean(mean.TD.naive),mean.diff.naive=mean(mean.diff.naive),
+            z.stat.ASD.naive=mean(z.stat.ASD.naive),z.stat.TD.naive=mean(z.stat.TD.naive),z.stat.diff.naive=mean(z.stat.diff.naive),
+            mean.ASD.SL=mean(mean.ASD.SL),mean.TD.SL=mean(mean.TD.SL),mean.diff.SL=mean(mean.diff.SL),
+            z.stat.ASD.SL=mean(z.stat.ASD.SL),z.stat.TD.SL=mean(z.stat.TD.SL),z.stat.diff.SL=mean(z.stat.diff.SL))
 
 # compare two estimates:
 plot(results.ave$z.stat.diff.SL~results.ave2$z.stat.diff.SL)
@@ -97,32 +77,33 @@ sum(results.ave$p.SL.fdr<0.05)
 sum(results.ave2$p.SL.fdr<0.05)
 results.ave[results.ave$p.SL.fdr<0.05,c('EdgeName')]
 results.ave2[results.ave2$p.SL.fdr<0.05,c('EdgeName')]
-# 10 edges in first set, 12 in second at fdr=0.05
+# same two edges at fdr=0.05
 
 sum(results.ave$p.SL.fdr<0.20)
 sum(results.ave2$p.SL.fdr<0.20)
-results.ave[results.ave$p.SL.fdr<0.2,c('EdgeName','z.stat.diff.SL','p.SL.fdr')]
-results.ave2[results.ave2$p.SL.fdr<0.2,c('EdgeName','z.stat.diff.SL','p.SL.fdr')]
-# 31 edges in first set, 34 in second
+edges.20.set1 = results.ave[results.ave$p.SL.fdr<0.2,c('EdgeName','z.stat.diff.SL','p.SL.fdr')]
+edges.20.set2 = results.ave2[results.ave2$p.SL.fdr<0.2,c('EdgeName','z.stat.diff.SL','p.SL.fdr')]
+
+cbind(edges.20.set1$EdgeName,edges.20.set2$EdgeName)
+all(edges.20.set1$EdgeName==edges.20.set2$EdgeName)
 
 ###########################
 ###########################
 # Create results.ave from all seeds:
-results.ave = rbind(results.all,results.all2)%>%
-  group_by(EdgeID,EdgeName)%>%
-  summarize(mean.ASD.naive=mean(mean.ASD.naive), 
-            mean.TD.naive=mean(mean.TD.naive),
-            mean.diff.naive=mean(mean.diff.naive),
-            z.stat.ASD.naive=mean(z.stat.ASD.naive),
-            z.stat.TD.naive=mean(z.stat.TD.naive),
-            z.stat.diff.naive=mean(z.stat.diff.naive),
-            mean.ASD.SL=mean(mean.ASD.SL),
-            mean.TD.SL=mean(mean.TD.SL),
-            mean.diff.SL=mean(mean.diff.SL),
-            z.stat.ASD.SL=mean(z.stat.ASD.SL),
-            z.stat.TD.SL=mean(z.stat.TD.SL),
-            z.stat.diff.SL=mean(z.stat.diff.SL),
-            SL.naive.mean.diff=mean(abs(mean.diff.SL)-abs(mean.diff.naive)))
+results.all.both = rbind(results.all,results.all2)
+# standard errors:
+results.all.both$se.diff.naive = results.all.both$mean.diff.naive/results.all.both$z.stat.diff.naive
+results.all.both$se.diff.SL = results.all.both$mean.diff.SL/results.all.both$z.stat.diff.SL
+
+results.ave = results.all.both%>%
+  group_by(EdgeID, EdgeName)%>%
+  summarize(mean.ASD.naive=mean(mean.ASD.naive), mean.TD.naive=mean(mean.TD.naive),mean.diff.naive=mean(mean.diff.naive),
+            z.stat.ASD.naive=mean(z.stat.ASD.naive),z.stat.TD.naive=mean(z.stat.TD.naive),z.stat.diff.naive=mean(z.stat.diff.naive),
+            mean.ASD.SL=mean(mean.ASD.SL),mean.TD.SL=mean(mean.TD.SL),mean.diff.SL=mean(mean.diff.SL),
+            z.stat.ASD.SL=mean(z.stat.ASD.SL),z.stat.TD.SL=mean(z.stat.TD.SL),z.stat.diff.SL=mean(z.stat.diff.SL),
+            se.diff.naive=mean(se.diff.naive),se.diff.SL=mean(se.diff.SL))
+
+
 
 results.ave$p.naive = 2*(1-pnorm(abs(results.ave$z.stat.diff.naive)))
 results.ave$p.naive.fdr = p.adjust(results.ave$p.naive,method='BH')
@@ -134,49 +115,37 @@ sum(results.ave$p.SL.fdr<0.05)
 
 
 # Changes in ASD mean:
-temp = results.ave[,c("EdgeName", "mean.ASD.naive", "mean.ASD.SL")]
+temp = results.ave[,c("EdgeName","mean.ASD.SL","mean.ASD.naive")]
 temp$Change=temp$mean.ASD.SL-temp$mean.ASD.naive
 results.ASD = temp%>%pivot_longer(cols=c(2,3), names_to = 'Method',values_to='mean.ASD')
 
-p0 = results.ASD%>%
-  ggplot(aes(x=Method, y=mean.ASD, group=EdgeName,color=Change))+
-  geom_point()+
-  geom_line()+
-  ylim(c(-0.2,0.25))+
-  ylab('Mean FC')+
+p0 = results.ASD%>%ggplot(aes(x=Method, y=mean.ASD, group=EdgeName,color=Change))+
+  geom_point()+geom_line()+ylim(c(-0.2,0.25))+ylab('Mean FC')+
   scale_x_discrete(labels=c("mean.ASD.naive" = "Naive", "mean.ASD.SL" = "DRTMLE"))+
-  ggtitle('A) ASD')+
-  scale_color_gradient2(limits=c(-0.005,0.005),oob=scales::squish)
+  ggtitle('A) ASD')+scale_color_gradient2(limits=c(-0.005,0.005),oob=scales::squish)
 
 # Changed in TD mean: 
-temp = results.ave[,c("EdgeName", "mean.TD.naive", "mean.TD.SL")]
+temp = results.ave[,c("EdgeName","mean.TD.naive","mean.TD.SL")]
 temp$Change=temp$mean.TD.SL-temp$mean.TD.naive
 
 results.TD = temp%>%pivot_longer(cols=c(2,3), names_to = 'Method',values_to='mean.TD')
 p1=results.TD%>%ggplot(aes(x=Method, y=mean.TD, group=EdgeName,color=Change))+
-  geom_line()+
-  geom_point()+
-  ylim(c(-0.2,0.25))+
-  ggtitle('B) TD')+
+  geom_line()+geom_point()+ylim(c(-0.2,0.25))+ggtitle('B) TD')+
   scale_x_discrete(labels=c("mean.TD.naive" = "Naive", "mean.TD.SL" = "DRTMLE"))+
-  ylab('Mean FC')+
-  scale_color_gradient2(limits=c(-0.005,0.005))
+  ylab('Mean FC')+scale_color_gradient2(limits=c(-0.005,0.005))
 
 # Difference in mean between ASD and TD: 
 results.ave$diff.ASD.TD.naive = results.ave$mean.ASD.naive - results.ave$mean.TD.naive
 results.ave$diff.ASD.TD.SL = results.ave$mean.ASD.SL - results.ave$mean.TD.SL
 
-temp = results.ave[,c("EdgeName", "diff.ASD.TD.SL", "diff.ASD.TD.naive")]
+temp = results.ave[,c("EdgeName","diff.ASD.TD.naive","diff.ASD.TD.SL")]
 temp$Change=temp$diff.ASD.TD.SL-temp$diff.ASD.TD.naive
 results.diff = temp%>%pivot_longer(cols=c(2,3), names_to = 'Method',values_to='difference')
 
-p2=results.diff%>%
-  ggplot(aes(x=Method, y=difference, group=EdgeName, color=Change))+
-  geom_line()+geom_point()+ylim(c(-0.015,0.015))+
-  ggtitle('C) ASD-TD')+
+p2=results.diff%>%ggplot(aes(x=Method, y=difference, group=EdgeName, color=Change))+
+  geom_line()+geom_point()+ylim(c(-0.015,0.015))+ggtitle('C) ASD-TD')+
   scale_x_discrete(labels=c("diff.ASD.TD.naive" = "Naive", "diff.ASD.TD.SL" = "DRTMLE"))+
-  ylab('Mean ASD - TD')+
-  scale_color_gradient2()
+  ylab('Mean ASD - TD')+scale_color_gradient2()
 
 #pdf(file='~/Dropbox/Apps/Overleaf/MotionSelectionBias_rsfMRI/Figures/DeconfoundedGroupMeans.pdf',width=8,height=5)
 grid.arrange(p0,p1,p2,ncol=3)
@@ -191,11 +160,18 @@ p1=ggplot(results.ave,aes(x=p.SL))+geom_histogram()+ggtitle('B) P-values from DR
 grid.arrange(p0,p1,ncol=2)
 #dev.off()
 
+par(mfrow=c(1,2))
+hist(results.ave$se.diff.naive)
+hist(results.ave$se.diff.SL)
+mean(results.ave$se.diff.SL<results.ave$se.diff.naive)
+# only slightly greater than 50% have smaller SEs
+
+hist(results.ave$se.diff.SL/results.ave$se.diff.naive,main='Relative efficiency of SL to naive')
 
 # Calculate Cohen's D in naive estimates
 
 # Create plots to visualize the effect of drtmle on the deconfounded mean
-load('./Data/DataWithPropensities_seed1.RData')
+load('~/Dropbox/QualityControlImpactsFMRI/Data/DataWithPropensities_seed1.RData')
 
 nEdges=153
 idx.pass.cc = dat3$KKI_criteria=='Pass' & !is.na(dat3$propensities.SL) & !is.na(dat3$r.ic1.ic2)
@@ -206,7 +182,9 @@ idx.pass.cc.td = idx.pass.cc & dat3$PrimaryDiagnosis=='None'
 n1 = sum(idx.pass.cc.asd)
 n2 = sum(idx.pass.cc.td)
 (mean(dat3[idx.pass.cc.asd,'r.ic2.ic27'])-mean(dat3[idx.pass.cc.td,'r.ic2.ic27']))/sqrt(((n1-1)*var(dat3[idx.pass.cc.asd,'r.ic2.ic27'])+(n2-1)*var(dat3[idx.pass.cc.td,'r.ic2.ic27']))/(n1+n2-2))
+cohen.d(dat3[idx.pass.cc.asd,'r.ic2.ic27'],dat3[idx.pass.cc.td,'r.ic2.ic27'])
 # they match
+
 
 startEdgeidx=which(names(dat3)=='r.ic1.ic2')
 
@@ -230,24 +208,110 @@ cohen.d.df
 # check that the indexing is correct (that the correct drtmle
 # estimate was used):
 with(cohen.d.df,cor(cohensd,adj.cohensd))
-# high correlation (>0.95) so looks like calcs are correct
+# high correlation (>0.90) so looks like calcs are correct
+max(abs(cohen.d.df$adj.cohensd))
+# increased effect size crude estimate that only adjusts the means
+cohen.d.df[cohen.d.df$EdgeName=='r.ic2.ic27',]
 
 #proportion of effect sizes that "increased":
 mean(abs(cohen.d.df$cohensd)<abs(cohen.d.df$adj.cohensd))
-# there was a tendency to increase
+sum(abs(cohen.d.df$cohensd)<abs(cohen.d.df$adj.cohensd))
 
+# there was a tendency to increase
+# in the absence of any changes in SEs, we see the effect sizes increase,
+# indicating a correction in bias. 
+
+
+#############################################
 # Ordered edges with smallest p-values in drtmle:
-(list.edges = results.ave$EdgeName[results.ave$p.SL.fdr<0.05])
-list.pvalues = results.ave$p.SL[results.ave$p.SL.fdr<0.05]
+(list.edges = results.ave$EdgeName[results.ave$p.SL.fdr<0.20])
+list.pvalues = results.ave$p.SL[results.ave$p.SL.fdr<0.20]
 list.edges = list.edges[order(list.pvalues)]
 list.pvalues = sort(list.pvalues)
 # naive cohen's d of selected edges:
 cohen.d.df[cohen.d.df$EdgeName%in%list.edges,]
 
+
 # These values appear in the manuscript:
 max(abs(cohen.d.df$cohensd))
 # average of the absolute value of Cohen's D among selected edges:
 mean(abs(cohen.d.df$cohensd[cohen.d.df$EdgeName%in%list.edges]))
+
+### this is how much the effect sizes would change due to mean only,
+# do not use this, but it provides insight into mean versus variance:
+max(abs(cohen.d.df$adj.cohensd))
+# average of the absolute value of Cohen's D among selected edges:
+mean(abs(cohen.d.df$adj.cohensd[cohen.d.df$EdgeName%in%list.edges]))
+
+## Examine the relative contributions of changes in means
+# versus changes in standard errors:
+examine_means_se_selectededges = results.ave[results.ave$EdgeName%in%list.edges,c('EdgeName','mean.diff.naive',
+                                                                                  'mean.diff.SL','se.diff.naive',
+                                                                                  'se.diff.SL', "p.SL.fdr", "p.naive.fdr")]
+
+# number of selected edges in which absolute mean difference increased among selected edges:
+sum(abs(examine_means_se_selectededges$mean.diff.SL)>abs(examine_means_se_selectededges$mean.diff.naive))
+
+# number of  edges selected by DRTMLE but not the naive approach in which absolute mean difference increased:
+sum(abs(examine_means_se_selectededges$mean.diff.SL)>abs(examine_means_se_selectededges$mean.diff.naive) &
+      examine_means_se_selectededges$p.naive.fdr>.2)
+#17
+
+# number of edges selected by DRTMLE but not by the naive approach in which se decreased:
+sum(examine_means_se_selectededges$se.diff.SL<examine_means_se_selectededges$se.diff.naive & 
+      examine_means_se_selectededges$p.naive.fdr>.2)
+
+# number of  edges selected by DRTMLE but not the naive approach in which absolute mean difference increased among selected edges:
+sum(examine_means_se_selectededges$se.diff.SL<examine_means_se_selectededges$se.diff.naive)
+
+# number of selected edges in which both abs mean diff increased and se decreased:
+sum(examine_means_se_selectededges$se.diff.SL<examine_means_se_selectededges$se.diff.naive & 
+      abs(examine_means_se_selectededges$mean.diff.SL)>abs(examine_means_se_selectededges$mean.diff.naive))
+
+# number of edges selected by DRTMLE but not by the naive approach in which both abs mean diff increases and se decreased:
+sum(examine_means_se_selectededges$se.diff.SL<examine_means_se_selectededges$se.diff.naive & 
+      abs(examine_means_se_selectededges$mean.diff.SL)>abs(examine_means_se_selectededges$mean.diff.naive) &
+      examine_means_se_selectededges$p.naive.fdr>.2)
+
+
+# number of edges in which abs mean difference increase among 153 edges:
+# number of edges in which se decrease among 153 edges:
+sum(abs(results.ave$mean.diff.SL)>abs(results.ave$mean.diff.naive))
+
+# number of edges in which se decrease among 153 edges:
+sum(results.ave$se.diff.SL<results.ave$se.diff.naive)
+
+# number of edges in which abs mean difference increase and se decreased among 153 edges:
+sum(results.ave$se.diff.SL<results.ave$se.diff.naive & abs(results.ave$mean.diff.SL)>abs(results.ave$mean.diff.naive))
+
+
+examine_means_se_selectededges$abs.mean.diff = abs(examine_means_se_selectededges$mean.diff.SL)-abs(examine_means_se_selectededges$mean.diff.naive)
+examine_means_se_selectededges$se.rel.eff = examine_means_se_selectededges$se.diff.SL/examine_means_se_selectededges$se.diff.naive
+
+examine_means_se_selectededges$both_sig=as.factor(examine_means_se_selectededges$p.naive.fdr<=.2)
+
+vizMeanSE = ggplot(examine_means_se_selectededges, aes(x=abs.mean.diff, y=se.rel.eff, 
+                                                       shape=both_sig))+
+  geom_point(size=4, alpha = .8)+
+  scale_shape_discrete(labels = c("naive FDR p <= .2", "naive FDR p > .2"))+
+  geom_hline(yintercept = 1, linetype = 2)+
+  geom_vline(xintercept = 0, linetype = 2)+
+  theme_light()+theme(
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_text(size = 12),
+    legend.title = element_blank(),
+    legend.text = element_text(size =12))+
+  ylab("DRTMLE/Naive ASD-TD SE")+
+  xlab("DRTMLE-Naive (ASD-TD mean)")
+
+pdf('./ReviewerResponse/compare_meansSE.pdf')
+vizMeanSE
+dev.off()
+
+
+
 
 
 #####################################
@@ -260,7 +324,7 @@ pal <- wes_palette("Zissou1", 100, type = "continuous")
 #pal = matlab.like(100)
 set.seed(123)
 plot_pcorr_fun_propensities = function(EdgeName,EdgeNamePlot,legend=FALSE) { 
-      subdata = dat3[idx.pass.cc, c('PrimaryDiagnosis',EdgeName,'propensities.SL')]
+      subdata = dat3[idx.pass.cc,c('PrimaryDiagnosis',EdgeName,'propensities.SL')]
       names(subdata)[2] = 'EdgeName'
       temp = results.ave[results.ave$EdgeName==EdgeName,c('mean.ASD.naive','mean.TD.naive')]
       temp.naive = data.frame('PrimaryDiagnosis'=c('Autism','None'),'EdgeName'=c(temp$mean.ASD.naive,temp$mean.TD.naive))
@@ -273,24 +337,28 @@ plot_pcorr_fun_propensities = function(EdgeName,EdgeNamePlot,legend=FALSE) {
     outplot
   }
 
-# list the selected edges order by their uncorrected pvalues:
+# list the selected edges ordered by their uncorrected pvalues:
 list.edges
 
 # manually enter the desired edges:
 gn.p0=plot_pcorr_fun_propensities(EdgeName='r.ic2.ic27',EdgeNamePlot='IC02-IC27')
-gn.p1=plot_pcorr_fun_propensities(EdgeName='r.ic14.ic19',EdgeNamePlot='IC14-IC19')
-gn.p2=plot_pcorr_fun_propensities(EdgeName='r.ic13.ic26',EdgeNamePlot='IC13-IC26')
-gn.p3=plot_pcorr_fun_propensities(EdgeName='r.ic1.ic21',EdgeNamePlot='IC01-IC21')
-gn.p4=plot_pcorr_fun_propensities(EdgeName='r.ic17.ic24',EdgeNamePlot='IC17-IC24')
-gn.p5=plot_pcorr_fun_propensities(EdgeName='r.ic17.ic27',EdgeNamePlot='IC17-IC27')
-gn.p6=plot_pcorr_fun_propensities(EdgeName='r.ic14.ic21',EdgeNamePlot='IC14-IC21')
-gn.p7=plot_pcorr_fun_propensities(EdgeName='r.ic19.ic25',EdgeNamePlot='IC19-IC25')
-gn.p8=plot_pcorr_fun_propensities(EdgeName='r.ic1.ic24',EdgeNamePlot='IC01-IC24')
+gn.p1=plot_pcorr_fun_propensities(EdgeName='r.ic14.ic21',EdgeNamePlot='IC14-IC21')
+gn.p2=plot_pcorr_fun_propensities(EdgeName='r.ic19.ic26',EdgeNamePlot='IC19-IC26')
+gn.p3=plot_pcorr_fun_propensities(EdgeName='r.ic4.ic17',EdgeNamePlot='IC04-IC17')
+gn.p4=plot_pcorr_fun_propensities(EdgeName='r.ic14.ic19',EdgeNamePlot='IC14-IC19')
+gn.p5=plot_pcorr_fun_propensities(EdgeName='r.ic13.ic26',EdgeNamePlot='IC13-IC26')
+gn.p6=plot_pcorr_fun_propensities(EdgeName='r.ic1.ic21',EdgeNamePlot='IC01-IC21')
+gn.p7=plot_pcorr_fun_propensities(EdgeName='r.ic17.ic24',EdgeNamePlot='IC17-IC24')
+gn.p8=plot_pcorr_fun_propensities(EdgeName='r.ic19.ic21',EdgeNamePlot='IC19-IC21')
 
-pdf(file='./Application_Figures/DataForNineComponentsWithPropensities_naive_drtmle.pdf')
+#pdf(file='~/Dropbox/Apps/Overleaf/MotionSelectionBias_rsfMRI/Figures/DataForNineComponentsWithPropensities_naive_drtmle.pdf')
 grid.arrange(gn.p0,gn.p1,gn.p2,gn.p3,gn.p4,gn.p5,gn.p6,gn.p7,gn.p8,nrow=3)
-dev.off()
+#dev.off()
 
+# the edge with the largest change:
+results.ave$mag_change.ASD = abs(results.ave$mean.ASD.SL - results.ave$mean.ASD.naive)
+results.ave$EdgeName[which.max(results.ave$mag_change.ASD)]
+plot_pcorr_fun(EdgeName='r.ic24.ic27',EdgeNamePlot='IC24-IC27')
 
 ###################
 ##################
@@ -311,33 +379,36 @@ plot_pcorr_fun = function(EdgeName,EdgeNamePlot,legend=FALSE) {
 }
 
 gn.p0=plot_pcorr_fun(EdgeName='r.ic2.ic27',EdgeNamePlot='IC02-IC27')
-gn.p1=plot_pcorr_fun(EdgeName='r.ic14.ic19',EdgeNamePlot='IC14-IC19')
-gn.p2=plot_pcorr_fun(EdgeName='r.ic13.ic26',EdgeNamePlot='IC13-IC26')
-gn.p3=plot_pcorr_fun(EdgeName='r.ic1.ic21',EdgeNamePlot='IC01-IC21')
-gn.p4=plot_pcorr_fun(EdgeName='r.ic17.ic24',EdgeNamePlot='IC17-IC24')
-gn.p5=plot_pcorr_fun(EdgeName='r.ic17.ic27',EdgeNamePlot='IC17-IC27')
-gn.p6=plot_pcorr_fun(EdgeName='r.ic14.ic21',EdgeNamePlot='IC14-IC21')
-gn.p7=plot_pcorr_fun(EdgeName='r.ic19.ic25',EdgeNamePlot='IC19-IC25')
-gn.p8=plot_pcorr_fun(EdgeName='r.ic1.ic24',EdgeNamePlot='IC01-IC24', legend=TRUE)
+gn.p1=plot_pcorr_fun(EdgeName='r.ic14.ic21',EdgeNamePlot='IC14-IC21')
+gn.p2=plot_pcorr_fun(EdgeName='r.ic19.ic26',EdgeNamePlot='IC19-IC26')
+gn.p3=plot_pcorr_fun(EdgeName='r.ic4.ic17',EdgeNamePlot='IC04-IC17')
+gn.p4=plot_pcorr_fun(EdgeName='r.ic14.ic19',EdgeNamePlot='IC14-IC19')
+gn.p5=plot_pcorr_fun(EdgeName='r.ic13.ic26',EdgeNamePlot='IC13-IC26')
+gn.p6=plot_pcorr_fun(EdgeName='r.ic1.ic21',EdgeNamePlot='IC01-IC21')
+gn.p7=plot_pcorr_fun(EdgeName='r.ic17.ic24',EdgeNamePlot='IC17-IC24')
+gn.p8=plot_pcorr_fun(EdgeName='r.ic19.ic21',EdgeNamePlot='IC19-IC21',legend=TRUE)
 
 
-pdf(file='./Application_Figures/DataForNineComponents_naive_drtmle.pdf')
+#pdf(file='~/Dropbox/Apps/Overleaf/MotionSelectionBias_rsfMRI/Figures/DataForNineComponents_naive_drtmle.pdf')
 grid.arrange(gn.p0,gn.p1,gn.p2,gn.p3,gn.p4,gn.p5,gn.p6,gn.p7,gn.p8,nrow=3)
-dev.off()
+#dev.off()
 
-# the edge with the largest change:
-results.ave$mag_change.ASD = abs(results.ave$mean.ASD.SL - results.ave$mean.ASD.naive)
-results.ave$EdgeName[which.max(results.ave$mag_change.ASD)]
-plot_pcorr_fun(EdgeName='r.ic26.ic28',EdgeNamePlot='IC26-IC28')
 
 ## Create a plot of the missing data:
-dat.forcompletepredictors = dat3[,c('PrimaryDiagnosis','ADHD_Secondary','AgeAtScan','handedness','CurrentlyOnStimulants','iPANESS.TotalOverflowNotAccountingForAge','WISC.GAI','DuPaulHome.InattentionRaw','DuPaulHome.HyperactivityRaw','ADOS.Comparable.Total', 'Sex', 'SES.Family', 'Race2','CompletePredictorCases')]
+dat.forcompletepredictors = dat3[,c('PrimaryDiagnosis','ADHD_Secondary','AgeAtScan','handedness',
+                                    'CurrentlyOnStimulants','PANESS.TotalOverflowNotAccountingForAge','WISC.GAI',
+                                    'DuPaulHome.InattentionRaw','DuPaulHome.HyperactivityRaw','ADOS.Comparable.Total', 
+                                    'Sex', 'SES.Family', 'Race2','CompletePredictorCases')]
 sum(complete.cases(dat.forcompletepredictors))
 dat.forcompletepredictors$CompletePredictorCases[dat.forcompletepredictors$CompletePredictorCases==0]=NA
 
-names(dat.forcompletepredictors) = c('Primary Diagnosis', 'ADHD Secondary', 'Age at Scan', 'Handedness', 'Prescribed Stimulants', 'iMotor Overflow', 'GAI', 'Inattention', 'Hyperactivity', 'iADOS', 'Sex', 'SES', 'Race', 'Complete Predictor Cases') 
+names(dat.forcompletepredictors) = c('Primary Diagnosis', 'ADHD Secondary', 'Age at Scan', 'Handedness',
+                                     'Prescribed Stimulants', 'Motor Overflow', 'GAI', 
+                                     'Inattention', 'Hyperactivity', 'iADOS', 
+                                     'Sex', 'SES', 'Race', 'Complete Predictor Cases') 
 
-pdf('./Application_Figures/vis_miss.pdf')
+pdf('~/Dropbox/Apps/Overleaf/MotionSelectionBias_rsfMRI/Figures/vis_miss.pdf')
 vis_miss(dat.forcompletepredictors,sort_miss = TRUE)
 dev.off()
+
 
