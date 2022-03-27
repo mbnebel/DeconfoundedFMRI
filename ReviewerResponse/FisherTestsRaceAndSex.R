@@ -1,3 +1,5 @@
+#BRisk
+
 # Reviewer 1 
 
 # These results were used to support the decision to not use any imputation
@@ -77,8 +79,6 @@ wilcox.test(ADOS.Comparable.Total~is.na(handedness),data=dat3[dat3$PrimaryDiagno
 wilcox.test(ADOS.Comparable.Total~is.na(Race2),data=dat3[dat3$PrimaryDiagnosis=='Autism',])
 
 
-
-#BRisk
 
 # Reviewer 3 Q Look at proportions excluded by sex and race
 # For this, load the non-imputed data:
