@@ -448,7 +448,7 @@ summary(tabTD,
 The proportion of children excluded differs across diagnostic groups using both the lenient and strict motion QC.
 
 ### 3.1.2 rs-fMRI exclusion probability changes with phenotype and age
-#### Covariates
+#### Specify covariates and reshape data
 ```{r}
 phenoVariables <- c("ID", "PrimaryDiagnosis", 
                     "ADOS.Comparable.Total", 
@@ -474,9 +474,10 @@ aim1G <- group_by(aim1, PrimaryDiagnosis, Motion.Exclusion.Level, Included, vari
 ```
 
 #### Fit univarate GAMs. 
-We used univariate models rather than a model with all covariates simultaneously because some of the variables are correlated, such that the impact of each variable on rs-fMRI usability may be difficult to estimate. These models are related to the propensity models that will be used in the estimation of the deconfounded group difference.
 
 We used univariate models rather than a model with all covariates simultaneously because some of the variables are correlated, such that the impact of each variable on rs-fMRI usability may be difficult to estimate. These models are related to the propensity models that will be used in the estimation of the deconfounded group difference.
+
+
 ```{r}
 aim1$delta = rep(NA,length=nrow(aim1))
 aim1$delta = ifelse(aim1$Included=="Included",1,0)
@@ -667,6 +668,7 @@ p_legend = cowplot::get_legend(p_gai + guides(color = guide_legend(nrow = 1))+
 
 
 #### Figure 4 bottom row: Density plots of covariates used to fit GAMs (across included & excluded children) 
+
 #### Define theme for density plots of covariates across included and excluded children
 ```{r,echo=F, message=FALSE, warning=FALSE}
 den_theme = theme(
@@ -865,12 +867,15 @@ cowplot::plot_grid(p_legend, top_row, NULL, bottom_row, NULL, hist_legend, nrow=
 #dev.off()
 
 ```
-NOTE: 19 rows = # of participants with missing Motor Overflow scores (imputed for the DRTMLE of the deconfounded group difference)
 
 **Figure 4. rs-fMRI exclusion probability changes with phenotype and age but not SES.** Univariate analysis of rs-fMRI exclusion probability as a function of participant characteristics. From left to right: Autism Diagnostic Observation Schedule (ADOS), social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow, age, general ability index (GAI), and socioeconomic status (SES) using the lenient (light blue lines, all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Lenient"]), digits=2))`), and strict (red lines) motion quality control (all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Strict"]), digits = 2))`). Variable distributions for each diagnosis group (included and excluded scans) are displayed across the bottom panel (TD=typically developing, green; ASD=autism spectrum disorder, yellow).
 
+NOTE: 89 rows  = number of participants missing SRS (SRS was not used in the propensity model and thus, was not used to define complete cases.)
+
 ### 3.1.3. Phenotype and age representations differ between included and excluded children
+
 #### 3.1.3. Mann-Whitney U tests to compare included vs excluded participants using lenient motion QC (13 tests)
+
 ```{r}
 #run lenient tests first
 aim1tib <- tibble(aim1)
@@ -934,9 +939,11 @@ aim1p = complete_mw[, c(1:2, 7:8, 10, 15)]
 
 aim1p$Motion.Exclusion.Level = rep("Lenient", nrow(aim1p))
 ```
+
 `r toString(length(aim1p$p.fdr[aim1p$p.fdr<.2]))` of the `r toString(length(aim1p$p.fdr))` tests have an FDR-adjusted p value < .2. We expect roughly `r toString(length(aim1p$p.fdr[aim1p$p.fdr<.2])*.2)` of these to be a false positive.
 
 #### 3.1.3 Supplemental Table S2. Mann-Whitney U tests to compare included vs excluded participants using strict motion QC (13 tests)
+
 ```{r, asis}
 #run tests using strict motion QC
 aim1MW <- aim1tib %>% 
@@ -1005,6 +1012,7 @@ aim1p$Included = rep("Included", nrow(aim1p))
 ```
 
 #### Figure 5. Split violin plots
+
 ```{r}
 My_Theme = theme_light()+theme(
   legend.title = element_blank(),
@@ -1020,7 +1028,7 @@ My_Theme = theme_light()+theme(
 ```
 
 #### Figure 5a. ADOS (ASD only) split violin
-NOTE: Missing ADOS scores for one participant evaluated at CARD (no included in complete predictor cases)
+
 ```{r}
 ados <- aim1 %>% 
   filter(PrimaryDiagnosis=="ASD" & variable=="ADOS") %>% 
@@ -1054,15 +1062,17 @@ paper_ados <- ggplot(ados, aes(Motion.Exclusion.Level, value, fill = Included, c
 
 ```
 
-#### Checking the positivity assumption for DRTMLE (reported in Discussion section of the paper)
+#### Checking the positivity assumption for DRTMLE (reported in Section 4.4 *Model assumptions and possible violations* of the paper)
+
 ```{r}
 adosMaxAll = ados %>% filter(Motion.Exclusion.Level=="Lenient" & Included=="Excluded") %>% select(value) %>% max()
 adosMaxUsable = ados %>% filter(Motion.Exclusion.Level=="Lenient" & Included=="Included") %>% select(value) %>% max()
 ```
 
-The highest ADOS score among included children using lenient motion QC is `r toString(adosMaxUsable)`; among all children, `r toString(adosMaxAll)`.
+The highest ADOS score among included children using lenient motion QC is `r toString(adosMaxUsable)`; among all children, `r toString(adosMaxAll)`. The highest possible score is 28 (we are using comparable)
 
 #### Figure 5b. SRS split violin
+
 ```{r}
 srs <- filter(aim1G, variable=="SRS")
 
@@ -1151,6 +1161,7 @@ paper_inat <- ggplot(inat, aes(Motion.Exclusion.Level, value, fill = Included, c
 ```
 
 #### Figure 5d. Hyperactivity/Impulsivity Spilt Violin
+
 ```{r}
 hyp <- filter(aim1G, variable=="Hyperactivity")
 
@@ -1189,6 +1200,7 @@ paper_hyp <- ggplot(hyp, aes(Motion.Exclusion.Level, value, fill = Included, col
 ```
 
 #### Figure 5e. Motor Overflow Split Violin
+
 ```{r}
 overflow <- filter(aim1G, variable=="Motor Overflow")
 
@@ -1228,6 +1240,7 @@ aim1_of <- ggplot(overflow, aes(Motion.Exclusion.Level, value, fill = Included, 
 ```
 
 #### Figure 5f. Age Split Violin
+
 ```{r}
 age <- filter(aim1G, variable=="Age")
 
@@ -1267,6 +1280,7 @@ aim1_age <- ggplot(age, aes(Motion.Exclusion.Level, value, fill = Included, colo
 ```
 
 #### Figure 5g. GAI Split Violin
+
 ```{r}
 gai <- filter(aim1G, variable=="GAI")
 
@@ -1305,6 +1319,7 @@ aim1_gai <- ggplot(gai, aes(Motion.Exclusion.Level, value, fill = Included, colo
 ```
 
 #### Combine split violins into one figure & save
+
 ```{r, echo=F, message=FALSE, warning=FALSE, fig.width = 8, fig.height = 4}
 fig2A <- cowplot::plot_grid(v_legend, paper_ados, nrow=2, rel_heights=c(.9, 1.1))
 
@@ -1325,11 +1340,17 @@ cowplot::plot_grid(fig2A, fig2B, ncol=2, rel_widths=c(.2, 1.2))
 
 ### 3.1.4. Functional connectivity as a function of phenotype and age
 
+The relationships we observed between rs-fMRI data usability and the covariates examined in the preceding analyses may impact our parameter of interest if those measures are also related to functional connectivity. Next, for each level of motion exclusion, we used univariate GAMs to examine the relationship between each phenotypic measure and the adjusted residuals for each edge of signal-to-signal components in the partial correlation matrix. This analysis is related to the outcome model used in the deconfounded group difference, as it provides insight into whether the sampling bias will impact the mean difference in functional connectivity between groups. Here, we focus on a single phenotype in each GAM for interpretability.
+
 #### Combine partial correlations with melted rs-fMRI usability and covariate info
 ```{r}
+#Identify first and last columns containing edgewise partial correlations
 startEdgeidx = which(names(dat3)=='r.ic1.ic2')
 endEdgeidx = which(names(dat3)=='r.ic29.ic30')
+
+#check that edge names look correct
 names(dat3)[startEdgeidx:endEdgeidx]
+
 signalFC <- dat3[, c(1,startEdgeidx:endEdgeidx)]
 
 dat2 <- merge(aim1, signalFC, all=TRUE, by = "ID")
@@ -1341,6 +1362,7 @@ fcMelt <- reshape2::melt(dat2[,1:162],
 ```
 
 #### 3.1.4. Run nested gams
+
 ```{r}
 fctib <- tibble(filter(fcMelt, Motion.Exclusion.Level!="None"))
 fctib$Motion.Exclusion.Level <- droplevels(fctib$Motion.Exclusion.Level)
@@ -1353,8 +1375,10 @@ fcNest <- fctib %>%
 #nested models
 fc_gams <- fcNest %>% 
   mutate(model = map(data, ~mgcv::gam(fc~s(value), data = na.omit(.x), method="REML")), 
-         coefs = map(model, tidy, conf.int = FALSE)) %>% 
-  unnest(coefs)
+         coefs = map(model, tidy, conf.int = FALSE),
+         #to compare with simulation
+         cor.covar = map(data, ~cor(.x$fc, .x$value))) %>% 
+  unnest(c(coefs, cor.covar))
 
 
 ```
@@ -1388,7 +1412,7 @@ hist_ados_p=ggplot(pdat, aes(x=p.value, fill=Motion.Exclusion.Level, color=Motio
 
 ```
 
-#### Figure 6b. Histogram of edgewise p-values for partial correlations as a function of SRS
+#### Figure 6b. Histogram of p-values for partial correlations as a function of SRS
 ```{r}
 pdat <- fc_gams %>% 
   ungroup() %>% 
@@ -1441,7 +1465,6 @@ hist_in_p=ggplot(pdat, aes(x=p.value, fill=Motion.Exclusion.Level, color=Motion.
 
 ```
 
-Number of edges with a p value < 0.05 for SRS: 
 #### Figure 6d. Histogram of p-values for partial correlations as a function of hyperactivity
 ```{r}
 pdat <- fc_gams %>% 
@@ -1552,6 +1575,7 @@ hist_p_legend <- cowplot::get_legend(hist_gai_p + guides(color = guide_legend(nr
 ```
 
 #### Combine histograms and print
+
 ```{r, fig.width=8, fig.height=3}
 
 fc_hist <- cowplot::plot_grid(hist_ados_p, hist_srs_p, hist_in_p, hist_hi_p, hist_mo_p, hist_age_p, hist_gai_p, ncol=7, rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
@@ -1565,15 +1589,17 @@ cowplot::plot_grid(fc_hist, hist_p_legend, nrow=2, rel_heights=c(1, .1))
 
 ```
 
-**Figure 6. Some covariates related to rs-fMRI exclusion probability are also related to functional connectivity.** *Histograms of p values for generalized additive models of the relationship between edgewise functional connectivity in participants with usable rs-fMRI data and (from left to right) ADOS, social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow as assessed during the Physical and Neurological Exam for Subtle Signs, age, and general ability index (GAI). For a given covariate, a clustering of p values near zero suggests that covariate is associated with functional connectivity for a greater number of edges. Several covariates appear to be related to functional connectivity using both the lenient motion quality control (slate blue bins) and the strict motion quality control (red bins).
+**Figure 6. Some covariates related to rs-fMRI exclusion probability are also related to functional connectivity.** Histograms of p values for generalized additive models of the relationship between edgewise functional connectivity in participants with usable rs-fMRI data and (from left to right) ADOS, social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow as assessed during the Physical and Neurological Exam for Subtle Signs, age, and general ability index (GAI). For a given covariate, a clustering of p values near zero suggests that covariate is associated with functional connectivity for a greater number of edges. Several covariates appear to be related to functional connectivity using both the lenient motion quality control (slate blue bins) and the strict motion quality control (red bins).
 
 #### Create table summarizing number of edges showing a nominally significant relationship (p<0.05 uncorrected) with each covariate, stratified by Primary Diagnosis
 ```{r}
 fc_gams_pCounts <- fc_gams %>% 
-  select(variable, Motion.Exclusion.Level, edge, p.value) %>% 
+  select(variable, Motion.Exclusion.Level, edge, p.value, cor.covar) %>% 
   ungroup() %>%
   group_by(variable, Motion.Exclusion.Level) %>% 
-  summarise(pCount = sum(p.value<.05))
+  summarise(pCount = sum(p.value<.05), 
+            max.cor = max(cor.covar, na.rm=TRUE),
+            min.cor = min(cor.covar, na.rm=TRUE))
 
 fc_gams_pCounts$clustering = rep("no clustering", nrow(fc_gams_pCounts))
 fc_gams_pCounts$clustering[fc_gams_pCounts$pCount>=10]="some clustering"
@@ -1584,6 +1610,7 @@ fc_gams_pCounts
 
 #xtable(fc_gams_pCounts[order(fc_gams_pCounts$Motion.Exclusion.Level),])
 ```
+
 NOTE: I used the following arbitrary cutoffs to describe Figure 6 in the section 3.1.4 
 
 no clustering < 10 edges
@@ -1591,7 +1618,6 @@ no clustering < 10 edges
 some evidence of clustering: between 10-20 edges
 
 clustering: >20 edges
-
 
 
 #### Extra. Impact of motion QC on framewise displacement metrics
