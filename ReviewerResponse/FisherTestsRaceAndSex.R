@@ -84,7 +84,7 @@ wilcox.test(ADOS.Comparable.Total~is.na(Race2),data=dat3[dat3$PrimaryDiagnosis==
 # For this, load the non-imputed data:
 library(mgcv)
 
-load('../Data/DataWithPropensities_seed1.RData')
+load('../Data/noImputation/DataWithPropensities_seed1.RData')
 
 names(dat3)
 with(dat3,table(Delta.KKI,Sex))
