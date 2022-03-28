@@ -68,7 +68,7 @@ geom_split_violin <- function (mapping = NULL, data = NULL, stat = "ydensity", p
 ```
 
 #### Load initial data set
-```{r, results = "asis"}
+```{r load-data, results = "asis"}
 load('./Data/noImputation/DataWithPropensities_seed1.RData')
 
 #convert PrimaryDiagnosis to factor
@@ -88,7 +88,7 @@ summary(tabInit,
 Our initial cohort is an aggregate of **`r toString(nrow(dat3))`** children between `r toString(round(min(dat3$AgeAtScan),digits=1))` and `r toString(round(max(dat3$AgeAtScan), digits=1))`-years old who participated in one of several neuroimaging studies at Kennedy Krieger Institute (KKI) between `r toString(min(dat3$YearOfScan))` and `r toString(max(dat3$YearOfScan))`.
 
 #### Reshape data to combine motion quality control (QC) levels
-```{r, tidy=TRUE}
+```{r reshape-data, tidy=TRUE}
 #create dummy factor to include all subjects
 dat3$noExclusion <- ifelse(dat3$ID>0, "Pass", "Pass")
 dat3$noExclusion <- factor(dat3$noExclusion, levels = c("Pass", "Fail"))
@@ -147,14 +147,14 @@ In the lenient case, scans were excluded if the participant had less than 5 minu
 3. **None** = all participants
 
 #### Limit initial dataset to complete cases
-```{r, results="asis"}
+```{r complete-cases-only, results="asis"}
 
 dat3 <- filter(dat3, CompletePredictorCases==1)
 
 ```
 
 #### 2.1.4 Determine number of participants in set of complete cases who did not attempt or aborted the scan early
-```{r, results="asis"}
+```{r n-aborted, results="asis"}
 dat3$aborted = rep("No", length=nrow(dat3))
 dat3$aborted[is.na(dat3$MeanFramewiseDisplacement) & dat3$KKI_criteria=="Fail"] = "Yes"
 
@@ -167,7 +167,7 @@ summary(tabAbort,
 Scans were either not attempted after two unsuccessful mock scan training sessions or aborted due to non-compliance for **`r toString(length(dat3$ID[dat3$aborted=="Yes"]))`** of the participants (`r toString(length(dat3$ID[dat3$aborted=="Yes"& dat3$PrimaryDiagnosis=="ASD"]))` ASD) in the set of complete cases.
 
 #### 2.1.5 Determine number of participants in complete cases set who attempted more than one scan
-```{r, results="asis"}
+```{r n-multiple-scans, results="asis"}
 load('./Data/nScans.RData')
 
 dat3 <- merge(dat3, nScans, all.x = TRUE)
@@ -191,7 +191,7 @@ nMode = getmode(as.numeric(as.character(dat3$n[dat3$n!=1])))
 **`r toString(length(dat3$n[dat3$n!="1"]))`** of the complete cases (`r toString(length(dat3$n[dat3$n!=1 & dat3$PrimaryDiagnosis=="TD"]))` typically developing, `r toString(length(dat3$n[dat3$n!=1 & dat3$PrimaryDiagnosis=="ASD"]))` ASD) attempted more than one resting-state fMRI scan. Most participants with multiple attempts had `r toString(nMode)` scans.
 
 #### Table 1. Summarize socio-demographic characteristics of the complete predictor cases for paper
-```{r, results="asis"}
+```{r socio-demo-table, results="asis"}
 
 completeCases <- filter(qcMelt, CompletePredictorCases==1)
 
@@ -230,7 +230,7 @@ summary(tab123)
 ```
 
 #### Generate version of Table 1 to paste into overleaf
-```{r}
+```{r socio-demo-table-overleaf}
 
 tab <- xtable(as.data.frame(summary(tab123)))
 print(tab, type="latex")
@@ -363,10 +363,13 @@ summary(tabN,
 graph
 
 ```
+
 **Figure 3a. Motion quality control leads to dramatic reductions in sample size.** Flow chart of inclusion criteria for this study showing the number of participants remaining after each exclusion step. Lenient motion quality control (QC) excluded 20% of complete predictor cases, while strict motion QC excluded 66% of complete predictor cases.
 
 #### Figure 3b. Proportion excluded stratified by Primary Diagnosis and motion QC level
+
 #### Define theme for proportion excluded plots
+
 ```{r, results='hide'}
 My_Theme_prop = theme_light()+theme(
   legend.title =element_blank(),
@@ -448,8 +451,10 @@ summary(tabTD,
 The proportion of children excluded differs across diagnostic groups using both the lenient and strict motion QC.
 
 ### 3.1.2 rs-fMRI exclusion probability changes with phenotype and age
+
 #### Specify covariates and reshape data
-```{r}
+
+```{r reshape-long-covariates}
 phenoVariables <- c("ID", "PrimaryDiagnosis", 
                     "ADOS.Comparable.Total", 
                     "SRS.Score", 
@@ -520,6 +525,7 @@ nested_gams <- nested_gams %>%
 ```
 
 #### Define theme for Figure 4 top row
+
 ```{r, message=FALSE, warning=FALSE}
 gam_theme = theme(
   axis.title.x=element_text(size=12),
@@ -868,11 +874,50 @@ cowplot::plot_grid(p_legend, top_row, NULL, bottom_row, NULL, hist_legend, nrow=
 
 ```
 
-**Figure 4. rs-fMRI exclusion probability changes with phenotype and age but not SES.** Univariate analysis of rs-fMRI exclusion probability as a function of participant characteristics. From left to right: Autism Diagnostic Observation Schedule (ADOS), social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow, age, general ability index (GAI), and socioeconomic status (SES) using the lenient (light blue lines, all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Lenient"]), digits=2))`), and strict (red lines) motion quality control (all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Strict"]), digits = 2))`). Variable distributions for each diagnosis group (included and excluded scans) are displayed across the bottom panel (TD=typically developing, green; ASD=autism spectrum disorder, yellow).
+**Figure 4. rs-fMRI exclusion probability changes with phenotype and age.** Univariate analysis of rs-fMRI exclusion probability as a function of participant characteristics. From left to right: Autism Diagnostic Observation Schedule (ADOS), social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow, age, general ability index (GAI), and socioeconomic status (SES) using the lenient (light blue lines, all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Lenient"]), digits=2))`), and strict (red lines) motion quality control (all FDR-adjusted p<`r toString(round(max(nested_gams$p.fdr[nested_gams$Motion.Exclusion.Level=="Strict"]), digits = 2))`). Variable distributions for each diagnosis group (included and excluded scans) are displayed across the bottom panel (TD=typically developing, green; ASD=autism spectrum disorder, yellow).
 
 NOTE: 89 rows  = number of participants missing SRS (SRS was not used in the propensity model and thus, was not used to define complete cases.)
 
+NOTE: We did not include SES, sex, or race in these models because these variables are not included in the propensity model in Section 2.3.3 *Application: Deconfounded group difference in the KKI dataset* due to imbalance between diagnosis groups. Results when controlling for these variables were highly similar (not shown in the manuscript).
+
+```{r gams-controlling-for-sex-race-SES}
+
+xfun::Rscript_call(
+  rmarkdown::render,
+  list(input="ReviewerResponse/forReviewers_probEx_withSexSESRace.Rmd", output_format='html_document')
+
+)
+
+```
+
+
+#### Figure S2. mean FD as a function of participant characteristics
+
+We also conducted a similar analysis using univariate GAMs assuming Gaussian errors to examine how the phenotypes are related to mean FD. We conducted separate analyses for the study sample (both usable and unusable cases), children passing the lenient criteria, and children passing the strict criteria, again using FDR correction for seven comparisons within each sample. 
+
+```{r gams-meanFD}
+
+xfun::Rscript_call(
+  rmarkdown::render,
+  list(input="ReviewerResponse/forReviewers_meanFD_covariates.Rmd", output_format='html_document')
+
+)
+
+```
+
+We also examined whether mean FD differed by sex for these three samples using Mann-Whitney U-tests.
+
+```{r meanFD-sex}
+
+knitr::spin("ReviewerResponse/FisherTestsRaceAndSex.R", precious=TRUE)
+
+
+```
+
+
 ### 3.1.3. Phenotype and age representations differ between included and excluded children
+
+We examined how the distribution of ADOS (ASD group), SRS, inattention, hyperactivity/impulsivity, motor overflow, age, and GAI differed between included and excluded participants. For additional insight into how scan exclusion may differentially affect autistic versus typically developing children, we stratified this analysis by diagnosis.
 
 #### 3.1.3. Mann-Whitney U tests to compare included vs excluded participants using lenient motion QC (13 tests)
 
@@ -1324,7 +1369,7 @@ aim1_gai <- ggplot(gai, aes(Motion.Exclusion.Level, value, fill = Included, colo
 fig2A <- cowplot::plot_grid(v_legend, paper_ados, nrow=2, rel_heights=c(.9, 1.1))
 
 fig2B <- cowplot::plot_grid(aim1_srs, paper_inat, paper_hyp, aim1_of, aim1_age, aim1_gai, ncol=6, 
-                            rel_widths=c(.97/6,.97/6,.97/6,.97/6,.97/6,1.15/6))
+                            rel_widths=c(.97/6,.97/6,.97/6,.97/6,.97/6, 1.15/6))
 
 png("./CovariatesAndRS-fMRIUsability/fig_violins_wide_cc.png",width=8,height=4,units="in",res=200)
 cowplot::plot_grid(fig2A, fig2B, ncol=2, rel_widths=c(.2, 1.2))
@@ -1373,18 +1418,22 @@ fcNest <- fctib %>%
   tidyr::nest()
 
 #nested models
+# correlations are for comparison with simulated data in the toy example
+#have to specify use="complete.obs" because some SRS scores are missing
 fc_gams <- fcNest %>% 
   mutate(model = map(data, ~mgcv::gam(fc~s(value), data = na.omit(.x), method="REML")), 
          coefs = map(model, tidy, conf.int = FALSE),
          #to compare with simulation
-         cor.covar = map(data, ~cor(.x$fc, .x$value))) %>% 
+         cor.covar = map(data, ~cor(.x$fc, .x$value, use = "complete.obs"))) %>% 
   unnest(c(coefs, cor.covar))
 
 
 ```
 
 #### Figure 6 Plot histograms of edgewise p-values from GAMs
+
 #### Figure 6a. Histogram of edgewise p-values for partial correlations as a function of ADOS. 
+
 NOTE: TD scores = 0
 ```{r}
 pdat <- fc_gams %>% 
@@ -1578,7 +1627,7 @@ hist_p_legend <- cowplot::get_legend(hist_gai_p + guides(color = guide_legend(nr
 
 ```{r, fig.width=8, fig.height=3}
 
-fc_hist <- cowplot::plot_grid(hist_ados_p, hist_srs_p, hist_in_p, hist_hi_p, hist_mo_p, hist_age_p, hist_gai_p, ncol=7, rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
+fc_hist <- cowplot::plot_grid(hist_ados_p, hist_srs_p, hist_in_p, hist_hi_p, hist_mo_p, hist_age_p, hist_gai_p, ncol=7, rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
 
 png("./CovariatesAndRS-fMRIUsability/fig_hist_rfc_cc.png",width=8,height=3,units="in",res=200)
 
@@ -1592,6 +1641,7 @@ cowplot::plot_grid(fc_hist, hist_p_legend, nrow=2, rel_heights=c(1, .1))
 **Figure 6. Some covariates related to rs-fMRI exclusion probability are also related to functional connectivity.** Histograms of p values for generalized additive models of the relationship between edgewise functional connectivity in participants with usable rs-fMRI data and (from left to right) ADOS, social responsiveness scale (SRS) scores, inattentive symptoms, hyperactive/impulsive symptoms, total motor overflow as assessed during the Physical and Neurological Exam for Subtle Signs, age, and general ability index (GAI). For a given covariate, a clustering of p values near zero suggests that covariate is associated with functional connectivity for a greater number of edges. Several covariates appear to be related to functional connectivity using both the lenient motion quality control (slate blue bins) and the strict motion quality control (red bins).
 
 #### Create table summarizing number of edges showing a nominally significant relationship (p<0.05 uncorrected) with each covariate, stratified by Primary Diagnosis
+
 ```{r}
 fc_gams_pCounts <- fc_gams %>% 
   select(variable, Motion.Exclusion.Level, edge, p.value, cor.covar) %>% 

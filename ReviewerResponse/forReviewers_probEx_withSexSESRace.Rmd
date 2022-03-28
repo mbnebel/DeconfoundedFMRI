@@ -1,7 +1,7 @@
 ---
 title: "probability of exclusion as a function of the covariates controlling for sex, race, and SES"
 author: "MB Nebel"
-date: "3/12/2022"
+date: '`r Sys.Date()`'
 output: html_document
 ---
 
@@ -10,12 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r message=FALSE, warning=FALSE}
-#for flowchart
-library(DiagrammeR)
-#to export flowchart as .png
-#webshot::install_phantomjs()
-library(DiagrammeRsvg)
-library(rsvg)
 library(grid)
 library(xtable)
 library(dplyr)
@@ -27,16 +21,13 @@ library(tidyr)
 library(purrr)
 #tidy model summary
 library(broom)
-library(readxl)
-#for tableby
-library(arsenal)
 
-#Also uses functions from plyr, scales, mgcv, cowplot
+#Also uses functions from plyr, mgcv, cowplot
 ```
 
 #### Load initial data set
-```{r, results = "asis"}
-load('./Data/noImputation/DataWithPropensities_seed1.RData')
+```{r load-data}
+load('../Data/noImputation/DataWithPropensities_seed1.RData')
 
 #convert PrimaryDiagnosis to factor
 dat3$PrimaryDiagnosis <- factor(dat3$PrimaryDiagnosis, levels = c("Autism", "None"))
@@ -202,7 +193,7 @@ nested_gams <- nested_gams %>%
 
 ```
 
-#### Define theme for Figure 2 top row
+#### Define theme for Alternate Figure 4 top row
 ```{r, message=FALSE, warning=FALSE}
 gam_theme = theme(
   axis.title.x=element_text(size=12),
@@ -216,9 +207,7 @@ gam_theme = theme(
 ```
 
 
-
-
-#### Figure 2a top. Probability of exclusion as a function of ADOS
+#### Alternate Figure 4a top. Probability of exclusion as a function of ADOS
 ```{r}
 ados <- nested_gams %>% 
   filter(variable=="ADOS") %>% 
@@ -238,7 +227,7 @@ p_ados <- ggplot(ados, aes(x=range, y=fit))+
 
 ```
 
-#### Figure 2b top. Probability of exclusion as a function of SRS
+#### Alternate Figure 4b top. Probability of exclusion as a function of SRS
 ```{r}
 srs <- nested_gams %>% 
   filter(variable=="SRS") %>% 
@@ -259,7 +248,7 @@ p_srs <- ggplot(srs, aes(x=range, y=fit))+
 
 ```
 
-#### Figure 2c top. Probability of exclusion as a function of Inattention
+#### Alternate Figure 4c top. Probability of exclusion as a function of Inattention
 ```{r}
 ina <- nested_gams %>% 
   filter(variable=="Inattention") %>% 
@@ -280,7 +269,7 @@ p_in <- ggplot(ina, aes(x=range, y=fit))+
 
 ```
 
-#### Figure 2d top. Probability of exclusion as a function of Hyperactivity
+#### Alternate Figure 4d top. Probability of exclusion as a function of Hyperactivity
 ```{r}
 hi <- nested_gams %>% 
   filter(variable=="Hyperactivity") %>% 
@@ -300,7 +289,7 @@ theme(plot.title = element_text(size = 11, hjust = 0.5))+
   theme(axis.title.y = element_blank())
 ```
 
-#### Figure 2e top. Probability of exclusion as a function of Motor Overflow
+#### Alternate Figure 4e top. Probability of exclusion as a function of Motor Overflow
 ```{r}
 mo <- nested_gams %>% 
   filter(variable=="Motor Overflow") %>% 
@@ -320,7 +309,7 @@ p_mo <- ggplot(mo, aes(x=range, y=fit))+
   theme(axis.title.y = element_blank())
 ```
 
-#### Figure 2f top. Probability of exclusion as a function of Age
+#### Alternate Figure 4f top. Probability of exclusion as a function of Age
 ```{r}
 age<- nested_gams %>% 
   filter(variable=="Age") %>% 
@@ -340,7 +329,7 @@ p_age <- ggplot(age, aes(x=range, y=fit))+
   theme(axis.title.y = element_blank())
 ```
 
-#### Figure 2g top. Probability of exclusion as a function of GAI
+#### Alternate Figure 4g top. Probability of exclusion as a function of GAI
 ```{r}
 gai <- nested_gams %>% 
   filter(variable=="GAI") %>% 
@@ -402,7 +391,7 @@ d_ados=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis)
 
 ```
 
-#### Figure 2b bottom. SRS density
+#### Alternate Figure 4b bottom. SRS density
 ```{r}
 ddata <- nested_gams %>% 
   filter(variable=="SRS") %>% 
@@ -425,7 +414,7 @@ d_srs=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))
 
 ```
 
-#### Figure 2c bottom. Inattention density
+#### Alternate Figure 4c bottom. Inattention density
 ```{r}
 ddata <- nested_gams %>% 
   filter(variable=="Inattention") %>% 
@@ -450,7 +439,7 @@ d_in=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+
 
 ```
 
-#### Figure 2d bottom. Hyperactivity/Impulsivity Density
+#### Alternate Figure 4d bottom. Hyperactivity/Impulsivity Density
 ```{r}
 ddata <- nested_gams %>% 
   filter(variable=="Hyperactivity") %>% 
@@ -473,7 +462,7 @@ d_hi=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+
 
 ```
 
-#### Figure 2e bottom. Motor Overflow Density
+#### Alternate Figure 4e bottom. Motor Overflow Density
 ```{r}
 ddata <- nested_gams %>% 
   filter(variable=="Motor Overflow") %>% 
@@ -496,7 +485,7 @@ d_mo=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))+
 
 ```
 
-#### Figure 2f bottom. Age Density
+#### Alternate Figure 4f bottom. Age Density
 ```{r}
 ddata <- nested_gams %>% 
   filter(variable=="Age") %>% 
@@ -519,7 +508,7 @@ d_age=ggplot(ddata, aes(x=value, fill=PrimaryDiagnosis, color=PrimaryDiagnosis))
 
 ```
 
-#### Figure 2g bottom. GAI Density
+#### Alternate Figure 4g bottom. GAI Density
 ```{r}
 ddata <- nested_gams %>% 
   filter(variable=="GAI") %>% 
@@ -554,7 +543,7 @@ top_row <- cowplot::plot_grid(p_ados, p_srs, p_in, p_hi, p_mo, p_age, p_gai, nco
 second_row <- cowplot::plot_grid(d_ados, d_srs, d_in, d_hi, d_mo, d_age, d_gai, ncol=7, 
                                  rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
 
-png("./ReviewerResponse/fig_probExclusion_allGAM_TD_ASD_cc_sexRaceSES.png",width=10,height=6,units="in",res=200)
+png("./fig_probExclusion_allGAM_TD_ASD_cc_sexRaceSES.png",width=10,height=6,units="in",res=200)
 cowplot::plot_grid(p_legend, top_row, NULL, 
                    second_row, NULL, hist_legend, 
                    nrow=6, rel_heights=c(.1, 1, -.01, .5, -.05, .1))
@@ -562,3 +551,13 @@ dev.off()
 
 
 ```
+
+#### Print alternate figure for the report
+```{r, fig.height=6, fig.width=10}
+
+cowplot::plot_grid(p_legend, top_row, NULL, 
+                   second_row, NULL, hist_legend, 
+                   nrow=6, rel_heights=c(.1, 1, -.01, .5, -.05, .1))
+
+```
+
