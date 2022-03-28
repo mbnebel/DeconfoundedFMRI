@@ -1,10 +1,12 @@
 #BRisk
 
-# Reviewer 1 
+# Reviewer 1   
 
 # These results were used to support the decision to not use any imputation
 
 load('../Data/imputeMotorOverflow/DataWithPropensities_seed1.RData')
+
+# Compare ADOS scores for children with and without motor overflow (PANESS)  
 
 # for ADOS, subset to ASD:
 (p.motor.overflow = wilcox.test(ADOS.Comparable.Total~is.na(PANESS.TotalOverflowNotAccountingForAge),data=dat3[dat3$PrimaryDiagnosis=='Autism',]))
@@ -16,12 +18,13 @@ summary(lm(ADOS.Comparable.Total~is.na(PANESS.TotalOverflowNotAccountingForAge),
 # still present in the remaining 11 children:
 sum(is.na(dat3$iPANESS.TotalOverflowNotAccountingForAge))
 summary(lm(ADOS.Comparable.Total~is.na(iPANESS.TotalOverflowNotAccountingForAge),data=dat3[dat3$PrimaryDiagnosis=='Autism',]))
-# ados is on average 4.12 higher in the children still missing motor overflow after imputation
+
+# ados is on average 4.12 higher in the children still missing motor overflow after imputation  
 wilcox.test(ADOS.Comparable.Total~is.na(iPANESS.TotalOverflowNotAccountingForAge),data=dat3[dat3$PrimaryDiagnosis=='Autism',])
 
 #############################
-# other notes on missingness not in RtoR:
-# create a vector of pvalues for six variables: motor overflow, GAI, SES, inattention, hyperactivity, stimulants: 
+# other notes on missingness not in RtoR:  
+# create a vector of pvalues for six variables: motor overflow, GAI, SES, inattention, hyperactivity, stimulants:   
 p.missing.motor = rep(NA,6)
 p.missing.motor[1]=p.motor.overflow$p.value
 
@@ -40,26 +43,27 @@ p.missing.motor[6]=wilcox.test(ADOS.Comparable.Total~is.na(CurrentlyOnStimulants
 p.adjust(p.missing.motor,method='BH')
 
 
-# no missing handedness with ADOS
-wilcox.test(ADOS.Comparable.Total~is.na(handedness),data=dat3[dat3$PrimaryDiagnosis=='Autism',])
+# no missing handedness in the ASD group (with ADOS) 
+with(dat3, table(PrimaryDiagnosis, is.na(handedness)))
+#wilcox.test(ADOS.Comparable.Total~is.na(handedness),data=dat3[dat3$PrimaryDiagnosis=='Autism',])
 
-# race only missing one observation:
+# race only missing one observation:  
 wilcox.test(ADOS.Comparable.Total~is.na(Race2),data=dat3[dat3$PrimaryDiagnosis=='Autism',])
 
 
 
 ############################
 #########################
-# GAI:
+# GAI:  
 
-# create a vector of pvalues for six variables: motor overflow, GAI, SES, inattention, hyperactivity, stimulants: 
+# create a vector of pvalues for six variables: motor overflow, GAI, SES, inattention, hyperactivity, stimulants:   
 p.missing.GAI = rep(NA,5)
 p.missing.GAI[1]=wilcox.test(WISC.GAI~is.na(PANESS.TotalOverflowNotAccountingForAge),data=dat3)$p.value
 
 # ADOS is not missing
 
 p.missing.GAI[2]=  wilcox.test(WISC.GAI~is.na(SES.Family),data=dat3)$p.value
-# GAI differs by SES.Family
+# GAI differs by SES.Family missingness 
 summary(lm(WISC.GAI~is.na(SES.Family),data=dat3))
 
 
@@ -72,16 +76,9 @@ p.missing.GAI[5]=wilcox.test(WISC.GAI~is.na(CurrentlyOnStimulants),data=dat3[dat
 p.adjust(p.missing.GAI,method='BH')
 
 
-# no missing handedness with ADOS
-wilcox.test(ADOS.Comparable.Total~is.na(handedness),data=dat3[dat3$PrimaryDiagnosis=='Autism',])
 
-# race only missing one observation:
-wilcox.test(ADOS.Comparable.Total~is.na(Race2),data=dat3[dat3$PrimaryDiagnosis=='Autism',])
-
-
-
-# Reviewer 3 Q Look at proportions excluded by sex and race
-# For this, load the non-imputed data:
+# Reviewer 3 Q Look at proportions excluded by sex and race  
+# For this, load the non-imputed data:  
 library(mgcv)
 
 load('../Data/noImputation/DataWithPropensities_seed1.RData')
@@ -122,7 +119,7 @@ boxplot(dat3$MeanFramewiseDisplacement.KKI~dat3$Sex,dat3[dat3$CompletePredictorC
 
 # complete predictor cases:
 dat3$Sex = as.factor(dat3$Sex)
-wilcox_test(MeanFramewiseDisplacement.KKI~Sex,dat3[dat3$CompletePredictorCases==1,])
+wilcox.test(MeanFramewiseDisplacement.KKI~Sex,dat3[dat3$CompletePredictorCases==1,])
 wilcox_effsize(formula=MeanFramewiseDisplacement.KKI~Sex,data=dat3[dat3$CompletePredictorCases==1,])
 
 # complete cases lenient pass:
