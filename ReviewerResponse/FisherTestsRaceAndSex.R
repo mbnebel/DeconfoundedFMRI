@@ -1,25 +1,25 @@
 #BRisk
 
-# Reviewer 1   
+#' Reviewer 1   
 
-# These results were used to support the decision to not use any imputation
+#' These results were used to support the decision to not use any imputation
 
 load('../Data/imputeMotorOverflow/DataWithPropensities_seed1.RData')
 
-# Compare ADOS scores for children with and without motor overflow (PANESS)  
+#' Compare ADOS scores for children with and without motor overflow (PANESS)  
 
-# for ADOS, subset to ASD:
+#' for ADOS, subset to ASD:
 (p.motor.overflow = wilcox.test(ADOS.Comparable.Total~is.na(PANESS.TotalOverflowNotAccountingForAge),data=dat3[dat3$PrimaryDiagnosis=='Autism',]))
 
-# pull mean differences from here:
+#' pull mean differences in ADOS from here:
 summary(lm(ADOS.Comparable.Total~is.na(PANESS.TotalOverflowNotAccountingForAge),data=dat3[dat3$PrimaryDiagnosis=='Autism',]))
-# in the non-imputed data, ADOS is 2.9 higher in the participants missing data
+#' in the non-imputed data, ADOS is 2.9 higher in the participants missing data
 
 # still present in the remaining 11 children:
 sum(is.na(dat3$iPANESS.TotalOverflowNotAccountingForAge))
 summary(lm(ADOS.Comparable.Total~is.na(iPANESS.TotalOverflowNotAccountingForAge),data=dat3[dat3$PrimaryDiagnosis=='Autism',]))
 
-# ados is on average 4.12 higher in the children still missing motor overflow after imputation  
+#' ADOS is on average 4.12 higher in the children still missing motor overflow after imputation  
 wilcox.test(ADOS.Comparable.Total~is.na(iPANESS.TotalOverflowNotAccountingForAge),data=dat3[dat3$PrimaryDiagnosis=='Autism',])
 
 #############################
@@ -77,13 +77,12 @@ p.adjust(p.missing.GAI,method='BH')
 
 
 
-# Reviewer 3 Q Look at proportions excluded by sex and race  
-# For this, load the non-imputed data:  
+#' Reviewer 3 Q Look at proportions excluded by sex and race  
+#' For this, load the non-imputed data:  
 library(mgcv)
 
 load('../Data/noImputation/DataWithPropensities_seed1.RData')
 
-names(dat3)
 with(dat3,table(Delta.KKI,Sex))
 
 # Lenient:
@@ -111,7 +110,7 @@ summary(gam(Delta.Ciric~s(SES.Family),data=dat3,family=binomial))
 
 ####################
 ###########
-# examine whether motion differs by sex:
+#' examine whether motion differs by sex:
 library(coin)
 library(rstatix)
 boxplot(dat3$MeanFramewiseDisplacement.KKI~dat3$Sex,dat3[dat3$CompletePredictorCases==1,])
@@ -122,11 +121,10 @@ dat3$Sex = as.factor(dat3$Sex)
 wilcox.test(MeanFramewiseDisplacement.KKI~Sex,dat3[dat3$CompletePredictorCases==1,])
 wilcox_effsize(formula=MeanFramewiseDisplacement.KKI~Sex,data=dat3[dat3$CompletePredictorCases==1,])
 
-# complete cases lenient pass:
+#' complete cases lenient pass:
 wilcox.test(MeanFramewiseDisplacement.KKI~Sex,dat3[dat3$CompletePredictorCases==1 & dat3$Delta.KKI==1,])
 
-# complete cases strict pass:
-# complete cases lenient pass:
+#' complete cases strict pass:
 wilcox.test(MeanFramewiseDisplacement.KKI~Sex,dat3[dat3$CompletePredictorCases==1 & dat3$Delta.Ciric==1,])
 
 
