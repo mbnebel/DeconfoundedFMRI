@@ -1472,7 +1472,8 @@ pdat <- fc_gams %>%
 hist_srs_p=ggplot(pdat, aes(x=p.value, fill=Motion.Exclusion.Level, color=Motion.Exclusion.Level))+  
   geom_histogram(position = "identity", alpha=0.5, inherit.aes=TRUE, binwidth = .05)+
   scale_x_continuous(expand = c(0, 0))+  
-  scale_y_continuous(expand = c(0, 0))+  
+  scale_y_continuous(expand = c(0, 0))+ 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 13), breaks=seq(0, 10, by=5))+  
   labs(x='p value', y='')+
   scale_color_manual(labels=c('Strict', 'Lenient'), values = c("#f55154", "#9FB0CC"))+
   scale_fill_manual(labels=c('Strict', 'Lenient'), values = c("#f55154", "#9FB0CC"))+
@@ -1577,7 +1578,7 @@ pdat <- fc_gams %>%
 hist_age_p=ggplot(pdat, aes(x=p.value, fill=Motion.Exclusion.Level, color=Motion.Exclusion.Level))+  
   geom_histogram(position = "identity", alpha=0.5, inherit.aes=TRUE, binwidth = .05)+
   scale_x_continuous(expand = c(0, 0))+  
-  scale_y_continuous(expand = c(0, 0))+  
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 13), breaks=seq(0, 10, by=5))+  
   labs(x='p value', y='')+
   scale_color_manual(labels=c('Strict', 'Lenient'), values = c("#f55154", "#9FB0CC"))+
   scale_fill_manual(labels=c('Strict', 'Lenient'), values = c("#f55154", "#9FB0CC"))+
