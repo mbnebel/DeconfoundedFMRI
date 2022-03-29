@@ -168,7 +168,7 @@ Scans were either not attempted after two unsuccessful mock scan training sessio
 
 #### 2.1.5 Determine number of participants in complete cases set who attempted more than one scan
 ```{r n-multiple-scans, results="asis"}
-load('./Data/nScans.RData')
+load('./Data/noImputation/nScans.RData')
 
 dat3 <- merge(dat3, nScans, all.x = TRUE)
 
