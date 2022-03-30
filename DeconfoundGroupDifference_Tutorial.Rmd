@@ -1,6 +1,7 @@
 ---
 title: "Deconfounded Group Difference Tutorial"
 output: html_document
+bibliography: CitationDiversity/referencesNoSelfCites.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -19,14 +20,14 @@ set.seed(seed, "L'Ecuyer-CMRG")
 ## Summary
 This tutorial has two goals: 
 
-1. to show how a covariate related to data usability, ASD severity, and functional connectivity can introduce confounding
-2. to show how DRTMLE adjusts our associational estimand for this confounding
+1. to show how a covariate related to data usability, ASD severity, and functional connectivity can introduce bias
+2. to show how DRTMLE adjusts our associational estimand for this bias
 
-Our parameter of interest is the average difference in functional connectivity between ASD and typically developing (TD) children. For the ASD group, our goal is to calculate the mean functional connectivity across the spectrum of autism severity.
+Our parameter of interest is the average difference in functional connectivity between children with autism spectrum disorder (ASD) and typically developing (TD) children. For the ASD group, our goal is to calculate the mean functional connectivity across the spectrum of autism severity.
 
-We create a variable $W_c$ that drives the confounding between data usability and functional connectivity. The idea is to create a variable similar to a measure of ASD severity, such that the distribution of $W_c$ differs by diagnosis. Let $A$ denote diagnosis, where $A=1$ denotes ASD and $A=0$ denotes TD. Then $W_c$ is log normal when $A=1$ and equal to zero when $A=0$. We also create additional covariates to make the estimation a little harder, and we call the vector of $W_c$ and the additional covariates $W$. In this example, there is confounding in the ASD functional connectivity but not in the TD functional connectivity. We could also simulate confounding in the TD functional connectivity, for example, caused by a biased distribution of ages. Here, we keep things simple and only create confounding in the ASD group, which in turn creates confounding in the difference between groups. 
+We create a variable $W_c$ that drives the bias between data usability and functional connectivity. The idea is to create a variable similar to a measure of ASD severity, such that the distribution of $W_c$ differs by diagnosis. Let $A$ denote diagnosis, where $A=1$ denotes ASD and $A=0$ denotes TD. Then $W_c$ is log normal when $A=1$ and equal to zero when $A=0$. We also create additional covariates to make the estimation a little harder, and we call the vector of $W_c$ and the additional covariates $W$. In this example, selection bias impacts ASD functional connectivity but not TD functional connectivity. We could also simulate confounding in the TD functional connectivity, for example, caused by a biased distribution of ages. Here, we keep things simple and only create confounding in the ASD group, which in turn creates confounding in the difference between groups. 
 
-We create a huge dataset, which we call the population sample, that is used to calculate the population parameter of interest, $E^*[Y(1)|A=1]-E^*[Y(1)|A=0]$ (approximating the integration via simulation). Here, $Y(1)$ denotes functional connectivity in the counterfactual world in which all data are usable. In our generated population sample, ~25% of participants have ASD, which is similar to the real, KKI dataset (~30% ASD). We create an example where $W_c$ impacts data usability ($\Delta=1$) and is related to functional connectivity, $Y(1)$, such that restricting the analysis to children with usable data results in confounding. 
+We create a huge dataset, which we call the population sample, that is used to calculate the population parameter of interest, $E^*[Y(1)|A=1]-E^*[Y(1)|A=0]$ (approximating the integration via simulation). Here, $Y(1)$ denotes functional connectivity between two brain regions in the counterfactual world in which all data are usable. In our generated population sample, ~25% of participants have ASD, which is similar to the real, KKI dataset (~30% ASD). We create an example where $W_c$ impacts data usability ($\Delta=1$) and is related to functional connectivity, $Y(1)$, such that restricting the analysis to children with usable data results in a biased estimate of our parameter of interest. 
 We will create a smaller sample, called the study sample, and show we can estimate the target parameter, $E[E[Y|\Delta=1,A=1,W]|A=1] - E[E[Y|\Delta=1,A=0,W]|A=0]$, to obtain an estimate of the true difference in functional connectivity. 
 
 ## Simulate diagnosis-specific distribution of behavioral variables 
@@ -49,7 +50,7 @@ W = cbind(W_c,matrix(rnorm(n1*(p-1)),nrow=n1))
 
 ## Simulate sampling bias that results from excluding children with more severe ASD.
 
-Next, we create the true propensity model. In this example, we have the connection $W_c \rightarrow \Delta$. We could also simulate a connection between $A$ and $\Delta$, but it is not necessary for inducing confounding.
+Next, we create the true propensity model. In this example, we have the connection $W_c \rightarrow \Delta$. We could also simulate a connection between $A$ and $\Delta$, but it is not necessary for inducing bias.
 
 ```{r}
 gn.true = plogis(2-0.2*W_c)
@@ -72,11 +73,11 @@ w_all = mean(W_c[A==1]) # mean of W_c in all ASD children
 w_usable = mean(W_c[A==1 & Delta==1]) # mean of W_c in ASD children with usable data
 
 par(mfrow=c(1,2))
-hist(W_c[A==1], main='A) ASD severity in full sample',xlim=c(0,35))
-abline(v=mean(W_c[A==1]),col='red') 
+hist(W_c[A==1], main='A) ASD severity in full sample', xlim=c(0,35), col="#7FAE88")
+abline(v=mean(W_c[A==1]),col='red', lwd=3) 
 
-hist(W_c[A==1 & Delta==1],main='B) ASD severity in usable sample',xlim=c(0,35))
-abline(v=mean(W_c[A==1 & Delta==1]),col='red')
+hist(W_c[A==1 & Delta==1],main='B) ASD severity in usable sample', xlim=c(0,35), col="#5D60AA")
+abline(v=mean(W_c[A==1 & Delta==1]),col='red', lwd=3)
 ```
 
 The mean severity in the full sample (**`r toString(round(w_all, digits=3))`**, Panel A) is higher than the mean severity in the sample with usable data (**`r toString(round(w_usable, digits=3))`**, Panel B). 
@@ -84,7 +85,7 @@ The mean severity in the full sample (**`r toString(round(w_all, digits=3))`**, 
 The full sample (Panel A) represents the distribution of ASD severity with respect to which we desire to calculate $E[E[Y(1)|W,A=1]|A=1]$. Note the inner expectation is a random variable in W; then the outer expectation will integrate with respect to the full distribution of W. The usable sample (Panel B) represents the distribution of ASD severity in children that pass the motion quality control criteria. In the naive approach, the mean of ASD functional connectivity is in fact an estimate of $E[Y|A=1,\Delta=1]=E[E[Y|A=1,W,\Delta=1]|A=1,\Delta=1]$, i.e., it calculates average functional connectivity across the biased sample.
 
 ## Simulate path between ASD severity and functional connnectivity. 
-For the sampling bias to impact the functional connectivity, there must be dependence between the variables with biased sampling distributions and functional connectivity. Here, we simulate $W_c \rightarrow Y$. We use a simple linear effect, slope=-0.2, although superLearner allows more complicated relationships. We also simulate $A \rightarrow Y$. We simulate an example where the conditional effect of ASD is positive, i.e., $E[Y(1)|A=1,W=w] - E[Y(1)|A=0,W=w] = 1.4$, but the marginalized effect of $A$ is negative, i.e., $E[Y(1)|A=1] - E[Y(1)|A=0] < 0$. This set up will result in large confounding when the data are later restricted to usable observations. (This aspect is not necessary for confounding, but helps illustrate the importance of the deconfounded group difference.) The output of this step is a sample of $Y(1)$, the data in the counterfactual world in which all data are usable. In particular, we have realizations of functional connectivity for all values of $W_c$ and not just those with usable data.  
+For the sampling bias to impact the functional connectivity, there must be dependence between the variables with biased sampling distributions and functional connectivity. Here, we simulate $W_c \rightarrow Y$. We use a simple linear effect, slope=-0.2, although superLearner allows more complicated relationships. We also simulate $A \rightarrow Y$. We simulate an example where the conditional effect of ASD is positive, i.e., $E[Y(1)|A=1,W=w] - E[Y(1)|A=0,W=w] = 1.4$, but the marginalized effect of $A$ is negative, i.e., $E[Y(1)|A=1] - E[Y(1)|A=0] < 0$. This set up will result in large confounding when the data are later restricted to usable observations. (This aspect is not necessary for confounding, but helps illustrate the importance of the deconfounded group difference.). The output of this step is a sample of $Y(1)$, the data in the counterfactual world in which all data are usable. In particular, we have realizations of functional connectivity for all values of $W_c$ and not just those with usable data.  
 
 Note we have created a very large number of observations here so that we can approximate $E[Y(1)|A=1] - E[Y(1)|A=0] < 0$, which can be tricky to analytically calculate. Later on, we will use a more realistic sample size in our estimation procedure.
 
@@ -94,6 +95,17 @@ Note we have created a very large number of observations here so that we can app
 betas_Qbar = c(-0.2,rep(0,p-1),1.4)
 xmat=cbind(W,A)
 Y = xmat%*%betas_Qbar+rnorm(n1,sd=0.2)
+
+library(ggplot2)
+temp = data.frame(cbind(xmat, Y, Delta))
+ggplot(temp, aes(x = W_c, y = Y, color = factor(Delta), shape = factor(A)))+
+  geom_point(size = 3, alpha = .6)+
+  scale_color_manual(labels = c("0", "1"), values = c("#9FB0CC", "#FDE599"))+
+  #scale_shape_manual(labels = c("TD", "ASD"))+
+  labs(color = expression(Delta), shape = "A")+
+  theme_light()+
+  theme(legend.title = element_text(size = 14))
+
 ```
 
 
@@ -129,6 +141,7 @@ Y.sample = Y[sample.i]
 Delta.sample = Delta[sample.i]
 A.sample = A[sample.i]
 W.sample = W[sample.i,]
+
 ```
 
 In this sample, we have the realizations of $Y(1)$. We can calculate the group difference using the $Y(1)$ on this more limited sample, which in some sense represents the best we can expect given limited sample size (the difference between this and truth reflects the small-ish sample size). Since the $W_c$ has high variability, we expect this sample to exhibit some departure from the full sample:
@@ -163,9 +176,6 @@ library(future)
 library(future.apply)
 library(xgboost)
 library(ranger)
-library(visdat)
-library(ggplot2)
-library(gridExtra)
 library(tidyr)
 library(e1071)
 library(glmnet)
@@ -187,7 +197,7 @@ cor(gn.est$SL.predict,gn.true[sample.i])
 ```
 
 ## Fit outcome model using superlearner:
-Estimate outcome model using usable data. Note: drtlme::tmp_method.CC_LS adjusts the tolerances as recommended by Dr. @benkbios:
+Estimate outcome model using usable data. Note: drtlme::tmp_method.CC_LS adjusts the tolerances as recommended by Dr. [David Benkeser](https://github.com/benkeser):
 
 ```{r}
 my.SL.libs.Qbar = c("SL.earth","SL.glmnet","SL.gam","SL.glm","SL.ranger","SL.ridge","SL.step","SL.step.interaction","SL.svm","SL.xgboost","SL.mean")
@@ -207,8 +217,8 @@ cor(Y.sample,Qbar.predict)
 
 ## Estimate the deconfounded group difference:
 
-We now estimate the deconfounded group difference using DRTMLE. This combines the inverse probability weighted estimates with g-computation in a special regression that results in doubly robust inference (in other words, consistent standard errors even if either the propensity or outcome model is not correctly specified). 
-```{r, tidy=TRUE}
+We now estimate the deconfounded group difference using DRTMLE. This combines the inverse probability weighted estimates with g-computation in a special regression that results in doubly robust inference (in other words, consistent standard errors even if either the propensity or outcome model is not correctly specified, [@Benkeser2017DoublyEffect] ). 
+```{r}
 # ASD:
 mean_fconn_asd.SL <- drtmle(Y = Y.sample.QC[A.sample==1],
                             A = Delta.sample[A.sample==1], # apologies for the notation conflict -- use Delta here
@@ -276,8 +286,17 @@ t.test(Y.pass.A1,Y.pass.A0)
 # create a plot of the estimates and their SEs:
 mean.data = data.frame('Method'=c('True','Naive','DRTMLE'),'Mean'=c(true.diff,naive.diff,deconfounded.diff),'Mean.Lower'=c(true.diff,naive.diff-1.96*se.naive.diff,deconfounded.diff-1.96*se.deconfounded.diff),'Mean.Upper'=c(true.diff,naive.diff+1.96*se.naive.diff,deconfounded.diff+1.96*se.deconfounded.diff))
 
-ggplot(mean.data, aes(Method, Mean)) + geom_bar(stat = "identity",aes(fill=Method)) + geom_errorbar(aes(ymin=Mean.Lower,ymax=Mean.Upper),width=0.2)+coord_flip() + theme(legend.position = 'none')+scale_fill_manual("legend", values = c("True" = "forestgreen", "Naive" = "red", "DRTMLE"='slateblue'))+theme(text = element_text(size=20))+ylab('ASD - TD')
+ggplot(mean.data, aes(Method, Mean)) + geom_bar(stat = "identity",aes(fill=Method)) + geom_errorbar(aes(ymin=Mean.Lower,ymax=Mean.Upper),width=0.2)+coord_flip() + theme(legend.position = 'none')+scale_fill_manual("legend", values = c("True" = "#7FAE88", "Naive" = "#5D60AA", "DRTMLE"='#76B8C2'))+theme(text = element_text(size=20))+ylab('ASD - TD')
 
 ```
 
-In this example, the true mean functional connectivity is lower in ASD than TD. The estimate from the naive approach is also negative but closer to zero due to confounding. Additionally, the standard errors are large, and the naive t test indicates there is not a significant difference between ASD and TD. In DRTMLE, we see the deconfounded group difference is closer to the truth, and we also see that there is a significant difference from zero. 
+In this example, the true mean functional connectivity in the ASD group is approximately -0.20, while the true mean functional connectivity in the TD group is 0, resulting in a true ASD-TD group difference that is negative. The estimate of the ASD-TD group difference from the naive approach is also negative but closer to zero due to confounding. Additionally, the standard errors are large, and the naive t test indicates there is not a significant difference between ASD and TD children. In DRTMLE, we see the deconfounded group difference is closer to the truth, and we also see that there is a significant difference from zero. 
+
+
+```{r}
+# Print figure for the manuscript
+pdf('SimulatedDataExample.pdf')
+ggplot(mean.data, aes(Method, Mean)) + geom_bar(stat = "identity",aes(fill=Method)) + geom_errorbar(aes(ymin=Mean.Lower,ymax=Mean.Upper),width=0.2)+coord_flip() + theme(legend.position = 'none')+scale_fill_manual("legend", values = c("True" = "#7FAE88", "Naive" = "#5D60AA", "DRTMLE"='#76B8C2'))+theme(text = element_text(size=20))+ylab('ASD - TD')
+dev.off()
+```
+
