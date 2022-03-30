@@ -392,7 +392,7 @@ my.SL.libs.gn = c(&quot;SL.earth&quot;,&quot;SL.glmnet&quot;,&quot;SL.gam&quot;,
 </div>
 <div id="estimate-the-deconfounded-group-difference" class="section level2">
 <h2>Estimate the deconfounded group difference:</h2>
-<p>We now estimate the deconfounded group difference using DRTMLE. This combines the inverse probability weighted estimates with g-computation in a special regression that results in doubly robust inference (in other words, consistent standard errors even if either the propensity or outcome model is not correctly specified, <span class="citation">(Benkeser et al. 2017)</span> ).</p>
+<p>We now estimate the deconfounded group difference using DRTMLE. This combines the inverse probability weighted estimates with g-computation in a special regression that results in doubly robust inference (in other words, consistent standard errors even if either the propensity or outcome model is not correctly specified, <span class="citation">(Benkeser et al., 2017; van der Laan and Rose, 2011)</span> ).</p>
 <pre class="r"><code># ASD:
 mean_fconn_asd.SL &lt;- drtmle(Y = Y.sample.QC[A.sample==1],
                             A = Delta.sample[A.sample==1], # apologies for the notation conflict -- use Delta here
@@ -488,7 +488,10 @@ dev.off()</code></pre>
 ##                 2</code></pre>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Benkeser2017DoublyEffect" class="csl-entry">
-Benkeser, David, M Carone, Mark J. van der Laan, and Peter B. Gilbert. 2017. <span>“<span class="nocase">Doubly robust nonparametric inference on the average treatment effect</span>.”</span> <em>Biometrika</em> 104 (4): 863–80. <a href="https://doi.org/10.1093/biomet/asx053">https://doi.org/10.1093/biomet/asx053</a>.
+Benkeser, D., Carone, M., van der Laan, M.J., Gilbert, P.B., 2017. <span class="nocase">Doubly robust nonparametric inference on the average treatment effect</span>. Biometrika 104, 863–880. <a href="https://doi.org/10.1093/biomet/asx053">https://doi.org/10.1093/biomet/asx053</a>
+</div>
+<div id="ref-vanderLaan2011TargetedData" class="csl-entry">
+van der Laan, M.J., Rose, S., 2011. <span class="nocase">Targeted Learning: Causal Inference for Observational and Experimental Data</span>. Springer, New York, NY.
 </div>
 </div>
 </div>

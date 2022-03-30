@@ -2,6 +2,7 @@
 title: "Deconfounded Group Difference Tutorial"
 output: html_document
 bibliography: CitationDiversity/referencesNoSelfCites.bib
+csl: CitationDiversity/neuroimage.csl
 ---
 
 ```{r setup, include=FALSE}
@@ -217,7 +218,7 @@ cor(Y.sample,Qbar.predict)
 
 ## Estimate the deconfounded group difference:
 
-We now estimate the deconfounded group difference using DRTMLE. This combines the inverse probability weighted estimates with g-computation in a special regression that results in doubly robust inference (in other words, consistent standard errors even if either the propensity or outcome model is not correctly specified, [@Benkeser2017DoublyEffect] ). 
+We now estimate the deconfounded group difference using DRTMLE. This combines the inverse probability weighted estimates with g-computation in a special regression that results in doubly robust inference (in other words, consistent standard errors even if either the propensity or outcome model is not correctly specified, [@Benkeser2017DoublyEffect; @vanderLaan2011TargetedData] ). 
 ```{r}
 # ASD:
 mean_fconn_asd.SL <- drtmle(Y = Y.sample.QC[A.sample==1],
