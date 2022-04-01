@@ -1,7 +1,6 @@
-# brisk
-# This code examines some aspects of the real data for comparison
-# with the simulated data. 
-# It uses the revised dataset that has no imputation. 
+# BRisk
+#' This code examines some aspects of the real data for comparison with the simulated data. 
+#' It uses the revised dataset that has no imputation. 
 # This code is modified to be used locally or on a cluster. 
 #seedID = 1;
 
@@ -330,7 +329,10 @@ Qn.xmat.predict.td = data.frame(model.matrix(numeric(nrow(temp.data))~.,data=tem
 
 
 ## FOR RtoR----->
+#' Mean ADOS for children with usable data
 mean(Qn.xmat.fit$ADOS.Comparable.Total[Qn.xmat.fit$PrimaryDiagnosisNone==0])
+
+#'Mean ADOS for children with usable and unusable data (complete predictor cases)
 mean(Qn.xmat.predict$ADOS.Comparable.Total[Qn.xmat.predict$PrimaryDiagnosisNone==0])
 
 # usable and unusable ADOS:
@@ -348,20 +350,17 @@ hist(Qn.xmat.predict.asd$ADOS.Comparable.Total,main='B) ASD severity in real dat
 abline(v=mean(Qn.xmat.predict.asd$ADOS.Comparable.Total),col='red')
 mean(Qn.xmat.predict.asd$ADOS.Comparable.Total)
 
-# examine the range of correlations for ADOS and the range of intercepts for ASD:
+#' Examine the range of correlations for ADOS and the range of intercepts for ASD:
 startEdgeidx=which(names(dat3)=='r.ic1.ic2')
 
 p.value.ados = rep(NA,nEdges)
 cor.ados=rep(NA,nEdges)
 for (edgeidx in 1:nEdges) {
   dat3.edgeidx = startEdgeidx+edgeidx-1 
-  p.value.ados[edgeidx]=model0$coefficients[2,4]
   cor.ados[edgeidx]=cor(dat3[idx.pass.cc,dat3.edgeidx],dat3$ADOS.Comparable.Total[idx.pass.cc])
   model.gam.out = gam(dat3[idx.pass.cc,dat3.edgeidx]~s(ADOS.Comparable.Total)+PrimaryDiagnosis,data=dat3[idx.pass.cc,])
   plot(model.gam.out,terms = 's(ADOS.Comparable.Total)')
 }
-
-
 
 max(cor.ados)
 min(cor.ados)
