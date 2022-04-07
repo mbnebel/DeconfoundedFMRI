@@ -13,8 +13,8 @@ characterizing in autism?"
     - Fig 3: Motion quality control leads to dramatic reductions in sample size.
     - Fig 4: rs-fMRI exclusion probability changes with phenotype and age.
     - Fig 5: Participants with usable rs-fMRI data differed from participants with unusable rsfMRI data.
-    - Table S2: Summary of Mann-Whitney U tests comparing included and excluded participants using the lenient motion QC and stratified by primary diagnosis.
-    - Table S3: Summary of Mann-Whitney U tests comparing included and excluded participants using the strict motion QC and stratified by primary diagnosis.
+    - Table S1: Summary of Mann-Whitney U tests comparing included and excluded participants using the lenient motion QC and stratified by primary diagnosis.
+    - Table S2: Summary of Mann-Whitney U tests comparing included and excluded participants using the strict motion QC and stratified by primary diagnosis.
     - Fig 6: Some covariates related to rs-fMRI exclusion probability are also related to functional connectivity.
 
 2. DeconfoundGroupDifference_Tutorial.Rmd - Tutorial described in *section 2.3.1 Theory: Deconfounded group difference*, which simulates a variable W<sub>c</sub> that drives the confounding between data usability (Δ) and functional connectivity (Y) and then shows how DRTMLE can adjust for this confounding. Output:
