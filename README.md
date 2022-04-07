@@ -35,6 +35,6 @@ characterizing in autism spectrum disorder?](https://www.biorxiv.org/content/10.
     - Fig. S4: Plots of modified partial correlations, naive means, and DRTMLE means for the nine components with smallest DRTMLE p-values.
 
 
-![graphical overview](https://github.com/mbnebel/DeconfoundedFMRI/blob/thebrisklab-main/graphicalOverview.png)
+![graphical overview](./illustrations/graphicalOverview.png)
 
 
