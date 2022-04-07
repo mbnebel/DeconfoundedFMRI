@@ -132,8 +132,10 @@ Next, we calculate the naive means in the population sample, $E[Y|A=1,\Delta=1]=
 
 cohen.d(Y[A==1 & Delta==1],Y[A==0 & Delta==1])
 ```
-<img align="center" width="175" height="75" src="illustrations/problem.png">
-The "naive" group difference in functional connectivity is then ASD.naive - TD.naive = **`r toString(round(ASD.naive-TD.naive, digits = 4))`**.
+The "naive" group difference in functional connectivity is then ASD.naive - TD.naive = **`r toString(round(ASD.naive-TD.naive, digits = 4))`**.  
+
+<span style="color: #dc322f; font-size:larger font-align;">The problem:</span>
+<center><img src="./illustrations/problem.png" width="200px" /></center>
 
 
 ## Next, create a study sample with a realistic sample size.
@@ -168,8 +170,11 @@ Y.sample.QC[Delta.sample==0]=NA
 
 ## Fit propensity model using superlearner
 
-We now estimate the propensity model and extract the predicted probabilities of data usability (propensities) using SuperLearner.
-```{r, echo=FALSE, message=FALSE}
+<center><img src="./illustrations/missingnessMechanism.png" width="250px" /></center>
+
+We now estimate the propensity model and extract the predicted probabilities of data usability (propensities) using SuperLearner. [Katherine Hoffman](https://github.com/hoffmakl) has a great visual guide explaining how superlearning, or model stacking, works: [Become a Superlearner!](https://www.khstats.com/blog/sl/superlearning/)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(drtmle)
 library(SuperLearner)
 library(earth)
@@ -210,6 +215,8 @@ This indicates that there is a reasonable probability of data inclusion across t
 
 
 ## Fit the outcome model using superlearner:
+<center><img src="./illustrations/outcome.png" width="275px" /></center>
+
 Estimate the outcome model using usable data. Note: drtlme::tmp_method.CC_LS adjusts the tolerances as recommended by Dr. [David Benkeser](https://github.com/benkeser):
 
 ```{r fit-outcome-usable}
@@ -315,3 +322,4 @@ ggplot(mean.data, aes(Method, Mean)) + geom_bar(stat = "identity",aes(fill=Metho
 dev.off()
 ```
 
+### References
