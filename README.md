@@ -23,7 +23,7 @@ characterizing in autism spectrum disorder?](https://www.biorxiv.org/content/10.
 
 3. `QC_Impacts_Analysis_singleseed_noimputation_cb.R` - R code to run the entire DRTMLE procedure for a single seed as described in *section 2.3.2 Application: Deconfounded group difference in the KKI Dataset*. This includes estimation of the propensity model (same for each edge), estimation of 153 outcome models, and application of DRTMLE to estimate of the deconfounded mean for the ASD group, the deconfounded mean for the typically developing group, and their variances for 153 functional connectivity edges.
 
-4. `QC_Impacts_loopSeeds.sh` - Loops through seeds, creates a copy of QC_Impacts_Analysis_singleseed_noimputation_cb.sh, and replaces "seedID" with a numeric value.
+4. `QC_Impacts_loopSeeds.sh` - Loops through seeds, creates a copy of QC_Impacts_Analysis_singleseed_cb.sh, and replaces "seedID" with a numeric value.
 
 5. `QC_Impacts_DRTMLE_Table_CirclePlotsWhiteBG.Rmd` - Code used to remove black background from screenshots of the 18 signal components saved in [Mango](http://ric.uthscsa.edu/mango/), average DRTMLE group means, group differences, and z-statistics across all 400 seeds. Outputs: 
     - Fig. 7: The DRTMLE deconfounded group difference revealed more extensive differences than the naıve approach. 
