@@ -8,7 +8,7 @@ local=TRUE
 # Change this for cluster or local:
 
 if(local){
-    setwd('~/Dropbox/QualityControlImpactsFMRI')
+    #setwd('~/Dropbox/QualityControlImpactsFMRI')
     save.input.data = FALSE
     getOption("mc.cores")
     options(mc.cores=8)
@@ -28,6 +28,7 @@ a = .libPaths()
 getOption("mc.cores")
 set.seed(seed, "L'Ecuyer-CMRG")
 
+#+ load-packages, echo=FALSE, warnings=FALSE
 tic = proc.time()
 library(drtmle)
 library(SuperLearner)
@@ -50,7 +51,8 @@ library(ROCit)
 # KKI: Lenient
 # Ciric: Strict
 
-dat=read.csv('./Data/Master_HeadMotion_wholeGroup_partialCorrelations_ic30_20210803.csv',header=T)
+#+ load-data
+dat=read.csv('../Data/Master_HeadMotion_wholeGroup_partialCorrelations_ic30_20210803.csv',header=T)
 
 # sort by ID: the simplifies the later indexing, as a merge with 
 # propensities sorts by ID:
@@ -72,8 +74,8 @@ table(dat$PrimaryDiagnosis[dat$KKI_criteria=='Pass'])
 table(dat$PrimaryDiagnosis[dat$Ciric_length=='Pass'])
 
 # subset to signal components:
-ic_class = read_excel('./DeconfoundedFMRI/componentLabels_pca85_ica30.xlsx')
-#ic_class = read_excel('./componentLabels_pca85_ica30.xlsx')
+#ic_class = read_excel('./DeconfoundedFMRI/componentLabels_pca85_ica30.xlsx')
+ic_class = read_excel('../componentLabels_pca85_ica30.xlsx')
 
 # create names we want to exclude:
 artifacts = c(1:nrow(ic_class))[ic_class$signal==0]
@@ -138,8 +140,6 @@ for (i in c(startEdgeidx:endEdgeidx)) {
     t.values.lm = c(t.values.lm,coef(summary(model.temp))['dat2$PrimaryDiagnosisNone',3])
     t.values.naive =   c(t.values.naive,t.test(dat2[completeCases & dat2$PrimaryDiagnosis=='None',paste0('r.',names(dat2)[i])],dat2[completeCases & dat2$PrimaryDiagnosis=='Autism',paste0('r.',names(dat2)[i])])$statistic)
 }
-cor(t.values.lm,t.values.naive)
-# nearly equivalent.
 
 # Make all ADOS in TD = 0
 dat2$ADOS.Comparable.Total[dat2$PrimaryDiagnosis=='None'] = 0
@@ -149,53 +149,10 @@ dat2$ADOS.Comparable.Total[dat2$PrimaryDiagnosis=='None'] = 0
 my.SL.libs.gn= c("SL.earth","SL.glmnet","SL.gam","SL.glm","SL.ranger","SL.step","SL.step.interaction","SL.xgboost","SL.mean")
 my.SL.libs.Qbar= c("SL.earth","SL.glmnet","SL.gam","SL.glm","SL.ranger","SL.ridge","SL.step","SL.step.interaction","SL.svm","SL.xgboost","SL.mean")
 
-# Learners that produce issues:
-#   SL.bartMachine: NA
-#   SL.glminteraction: produces a rank-deficient model
-
-# Predict PANESS:
-
-#paness.predictors = c('HeadCoil','YearOfScan','PrimaryDiagnosis','ADHD_Secondary','AgeAtScan','Sex','SES.Family','Race2','handedness','CurrentlyOnStimulants','WISC.GAI','DuPaulHome.InattentionRaw','DuPaulHome.HyperactivityRaw','ADOS.Comparable.Total')
-paness.predictors = c('PrimaryDiagnosis','ADHD_Secondary','AgeAtScan','Sex','SES.Family','Race2','handedness','CurrentlyOnStimulants','WISC.GAI','DuPaulHome.InattentionRaw','DuPaulHome.HyperactivityRaw','ADOS.Comparable.Total')
-
-
-temp.data = dat2[,c('PANESS.TotalOverflowNotAccountingForAge',paness.predictors)]
-completeCasesPredict = complete.cases(temp.data[,2:ncol(temp.data)])
-completeCasesFit = complete.cases(temp.data)
-PANESS=temp.data$PANESS.TotalOverflowNotAccountingForAge[completeCasesFit]
-# WISC.GAI has some missing values where PANESS is missing.
-# These subjects will be dropped
-
-sum(completeCasesPredict) - sum(completeCasesFit) # Imputes values for 19 children
-
-paness.xmat.fit = data.frame(model.matrix(PANESS.TotalOverflowNotAccountingForAge~.,data=temp.data[completeCasesFit,])[,-1])
-temp.data$PANESS.TotalOverflowNotAccountingForAge=0
-paness.xmat.predict = data.frame(model.matrix(PANESS.TotalOverflowNotAccountingForAge~.,data=temp.data[completeCasesPredict,])[,-1])
-
-paness.model = mcSuperLearner(Y = PANESS, X = paness.xmat.fit,SL.library = my.SL.libs.Qbar, family=gaussian(),cvControl = list(V = 10),method = drtmle:::tmp_method.CC_LS) # 10-fold CV
-paness.model
-paness.model$times$everything
-
-#This function produces an error within CV.SuperLearner:
-#method = drtmle:::tmp_method.CC_LS
-
-#set.seed(1, "L'Ecuyer-CMRG")
-#tic = proc.time()
-#paness.model = CV.SuperLearner(Y = PANESS, X = paness.xmat.fit, SL.library = my.SL.libs, family=gaussian(), cvControl = list(V = 10),parallel = 'multicore') # 10-fold CV
-#proc.time() - tic
-#summary(paness.model)
-#plot(paness.model,type='bw')
-
-#appear to be equivalent:
-#set.seed(1, "L'Ecuyer-CMRG")
-#paness.model = mcSuperLearner(Y = PANESS, X = paness.xmat.fit,SL.library = my.SL.libs, family=gaussian(),cvControl = list(V = 10),method = method.CC_LS) # 10-fold CV
-#paness.model
 
 #<---------------------------------
 
 # Dataset for propensity model:
-#gn.variables = c('KKI_criteria','HeadCoil','YearOfScan','PrimaryDiagnosis','ADHD_Secondary','AgeAtScan','Sex','handedness','CurrentlyOnStimulants','PANESS.TotalOverflowNotAccountingForAge','WISC.GAI','DuPaulHome.InattentionRaw','DuPaulHome.HyperactivityRaw','ADOS.Comparable.Total','ADOS.Comparable.StereotypedBehaviorsRestrictedInterests')
-
 gn.variables = c('KKI_criteria','PrimaryDiagnosis','ADHD_Secondary','AgeAtScan','handedness','CurrentlyOnStimulants','PANESS.TotalOverflowNotAccountingForAge','WISC.GAI','DuPaulHome.InattentionRaw','DuPaulHome.HyperactivityRaw','ADOS.Comparable.Total')
 
 # these indices will be used in the outcome model and drtmle as well:
@@ -216,28 +173,29 @@ dat2$CompletePredictorCases = idx.all.cc
 sum(dat2$CompletePredictorCases)
 
 
-
-## For RtoR describing simulations section-------------------------------->
-# new proportions rejected:
+#' For RtoR describing simulations section-------------------------------->
+#+ compare-sim-real-prop-rejected
 Delta.KKI = ifelse(temp.data$KKI_criteria=='Pass',1,0)
-#corrplot::corrplot(cor(gn.xmat),method='number')
 mean(Delta.KKI[gn.xmat$PrimaryDiagnosisNone==0])
 mean(Delta.KKI[gn.xmat$PrimaryDiagnosisNone==1])
 
-
+#+ compare-sim-real-ADOS-usability
 model.gam = gam(Delta.KKI~s(ADOS.Comparable.Total),data=gn.xmat,family=binomial)
 summary(model.gam)
-mean(gn.xmat$ADOS.Comparable.Total)
 
 mean(gn.xmat$ADOS.Comparable.Total[gn.xmat$PrimaryDiagnosisNone==0])
 
 newd <- gn.xmat[1, ] # grab any row; we are going to change temperature only
-newd$ADOS.Comparable.Total <- 14.3 - 1e-05 # subtract some small number
+newd$ADOS.Comparable.Total <- mean(gn.xmat$ADOS.Comparable.Total[gn.xmat$PrimaryDiagnosisNone==0]) - 1e-05 # subtract some small number
 y1 <- predict(model.gam, newd)
-newd$ADOS.Comparable.Total <- 14.3 + 1e-05 # add some small number
+newd$ADOS.Comparable.Total <- mean(gn.xmat$ADOS.Comparable.Total[gn.xmat$PrimaryDiagnosisNone==0]) + 1e-05 # add some small number
 y2 <- predict(model.gam, newd)
+
+#' slope at mean ADOS in real data (full sample)
 (y2 - y1)/2e-05
-14.3*(y2 - y1)/2e-05
+
+#' effect at mean ADOS in real data (full sample)
+mean(gn.xmat$ADOS.Comparable.Total[gn.xmat$PrimaryDiagnosisNone==0])*(y2 - y1)/2e-05
 
 newd <- gn.xmat[1, ] # grab any row; we are going to change temperature only
 newd$ADOS.Comparable.Total <- 20 - 1e-05 # subtract some small number
@@ -248,28 +206,12 @@ y2 <- predict(model.gam, newd)
 
 ## <-----------------------------------------
 
-glm.prop.model = glm(Delta.KKI~as.matrix(gn.xmat),family=binomial)
-propensities.glm = predict(glm.prop.model,type = 'response')
-gam.prop.model = mgcv::gam(Delta.KKI~PrimaryDiagnosisNone+ADHD_Secondary+handednessMixed+handednessRight+CurrentlyOnStimulants+s(AgeAtScan)+s(DuPaulHome.InattentionRaw)+s(DuPaulHome.HyperactivityRaw)+s(WISC.GAI)+s(PANESS.TotalOverflowNotAccountingForAge)+s(ADOS.Comparable.Total),method='REML',family=binomial,data=gn.xmat)
-propensities.gam=predict(gam.prop.model,type='response')
-
-
 (propensity.KKI = mcSuperLearner(Y = Delta.KKI, X = gn.xmat, family=binomial(link='logit'),SL.library = my.SL.libs.gn, cvControl = list(V = 10), method='method.CC_nloglik')) # 10-fold CV
 
-# check stability of propensities:
-min(propensity.KKI$SL.predict[Delta.KKI==1])
-
-# examine if there is a positive probability of usability among all data (positivity):
-min(propensity.KKI$SL.predict)
-
 propensities.SL = propensity.KKI$SL.predict
-summary(rocit(score=propensities.glm,class=Delta.KKI,method='nonparametric'))
-summary(rocit(score=propensities.gam,class=Delta.KKI,method='nonparametric'))
-summary(rocit(score=propensities.SL,class=Delta.KKI,method='nonparametric'))
-# For most seeds, much better fit with SuperLearner
 
 # merge propensities back to dataset:
-prop.asdtd = data.frame('ID'=dat2$ID[idx.all.cc],'propensities.glm'=propensities.glm,'propensities.gam'=propensities.gam,'propensities.SL'=propensities.SL,Delta.KKI)
+prop.asdtd = data.frame('ID'=dat2$ID[idx.all.cc],'propensities.SL'=propensities.SL,Delta.KKI)
 dat3 = merge(dat2,prop.asdtd,all = TRUE) # here, we keep all observations
 
 # this merge changes the ordering of ID. Hence, new index vectors are created,
@@ -290,8 +232,8 @@ all(idx.all.cc==!is.na(dat3$propensities.SL))
   # Delta should be correlated with propensities: 
   cor(1*(dat3$KKI_criteria=='Pass'),dat3$propensities.SL,use='pairwise.complete.obs')
 
-### Create outcome regression datasets:
-# NOTE: Currently using same variables for propensity and outcome model. 
+#' Create outcome regression datasets:
+#' NOTE: using same variables for propensity and outcome model. 
 Qn.variables =  gn.variables
 #NOTE: KKI_criteria is not used in prediction, but is included as a trick to construct the design matrix
 
@@ -304,8 +246,6 @@ idx.pass.cc.td = idx.pass.cc & dat3$PrimaryDiagnosis=='None'
 # used in drtmle:
 idx.all.cc.asd = idx.all.cc & dat3$PrimaryDiagnosis == 'Autism'
 idx.all.cc.td = idx.all.cc & dat3$PrimaryDiagnosis == 'None'
-
-#save(file=paste0('~/Dropbox/QualityControlImpactsFMRI/Data/PropensitiesXmats_seed',seed,'.RData'),Qn.variables,dat3,idx.all.cc,idx.pass.cc,edgeList,idx.all.cc.asd,idx.all.cc.td)
 
 # These datasets necessary to run SuperLearner without error
 # (note: ordering of indices differs from the propensity models due to the merge with the propensities)
@@ -327,28 +267,23 @@ all(temp.data$ID==dat3$ID[idx.all.cc.td])
 Qn.xmat.predict.td = data.frame(model.matrix(numeric(nrow(temp.data))~.,data=temp.data))[,-c(1,2)]
 
 
-
 ## FOR RtoR----->
-#' Mean ADOS for children with usable data
-mean(Qn.xmat.fit$ADOS.Comparable.Total[Qn.xmat.fit$PrimaryDiagnosisNone==0])
 
-#'Mean ADOS for children with usable and unusable data (complete predictor cases)
-mean(Qn.xmat.predict$ADOS.Comparable.Total[Qn.xmat.predict$PrimaryDiagnosisNone==0])
-
+par(mfrow=c(1,2))
+hist(Qn.xmat.predict.asd$ADOS.Comparable.Total,main='a) ASD severity in real data (full sample)', col="#7FAE88")
+abline(v=mean(Qn.xmat.predict.asd$ADOS.Comparable.Total),col='red', lwd=3)
+#' Mean ADOS severity in the real data (full sample)
+mean(Qn.xmat.predict.asd$ADOS.Comparable.Total)
 # usable and unusable ADOS:
 quantile(Qn.xmat.predict$ADOS.Comparable.Total[Qn.xmat.predict$PrimaryDiagnosisNone==0])
 
+hist(Qn.xmat.fit$ADOS.Comparable.Total[Qn.xmat.fit$PrimaryDiagnosisNone==0], main='B) ASD severity in real data (usable)', col="#5D60AA")
+abline(v=mean(Qn.xmat.fit$ADOS.Comparable.Total[Qn.xmat.fit$PrimaryDiagnosisNone==0]),col='red', lwd=3) 
+#' Mean ADOS severity in the real data (usable after lenient motion QC)
+mean(Qn.xmat.fit$ADOS.Comparable.Total[Qn.xmat.fit$PrimaryDiagnosisNone==0])
 # usable ADOS:
 quantile(Qn.xmat.fit$ADOS.Comparable.Total[Qn.xmat.fit$PrimaryDiagnosisNone==0])
 
-par(mfrow=c(1,2))
-hist(Qn.xmat.fit$ADOS.Comparable.Total[Qn.xmat.fit$PrimaryDiagnosisNone==0], main='A) ASD severity in real data (usable)')
-abline(v=mean(Qn.xmat.fit$ADOS.Comparable.Total[Qn.xmat.fit$PrimaryDiagnosisNone==0]),col='red') 
-mean(Qn.xmat.fit$ADOS.Comparable.Total[Qn.xmat.fit$PrimaryDiagnosisNone==0])
-
-hist(Qn.xmat.predict.asd$ADOS.Comparable.Total,main='B) ASD severity in real data')
-abline(v=mean(Qn.xmat.predict.asd$ADOS.Comparable.Total),col='red')
-mean(Qn.xmat.predict.asd$ADOS.Comparable.Total)
 
 #' Examine the range of correlations for ADOS and the range of intercepts for ASD:
 startEdgeidx=which(names(dat3)=='r.ic1.ic2')
