@@ -180,7 +180,7 @@ mean(Delta.KKI[gn.xmat$PrimaryDiagnosisNone==0])
 mean(Delta.KKI[gn.xmat$PrimaryDiagnosisNone==1])
 
 #+ compare-sim-real-ADOS-usability
-model.gam = gam(Delta.KKI~s(ADOS.Comparable.Total),data=gn.xmat,family=binomial)
+model.gam = mgcv::gam(Delta.KKI~s(ADOS.Comparable.Total),data=gn.xmat,family=binomial)
 summary(model.gam)
 
 mean(gn.xmat$ADOS.Comparable.Total[gn.xmat$PrimaryDiagnosisNone==0])
@@ -229,8 +229,8 @@ table(dat3$KKI_criteria,dat3$Delta.KKI)
 # these should be all in agreement (0 on off diagonal)
 all(idx.all.cc==!is.na(dat3$propensities.SL))
 
-  # Delta should be correlated with propensities: 
-  cor(1*(dat3$KKI_criteria=='Pass'),dat3$propensities.SL,use='pairwise.complete.obs')
+# Delta should be correlated with propensities: 
+cor(1*(dat3$KKI_criteria=='Pass'),dat3$propensities.SL,use='pairwise.complete.obs')
 
 #' Create outcome regression datasets:
 #' NOTE: using same variables for propensity and outcome model. 
