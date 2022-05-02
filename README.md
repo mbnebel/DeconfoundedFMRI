@@ -19,21 +19,21 @@ characterizing in autism spectrum disorder?](https://www.biorxiv.org/content/10.
     - Table S2: Summary of Mann-Whitney U tests comparing included and excluded participants using the strict motion QC and stratified by primary diagnosis.
     - Fig 6: Some covariates related to rs-fMRI exclusion probability are also related to functional connectivity.
 
-2. `DeconfoundGroupDifference_Tutorial.Rmd` - Tutorial described in *Section 2.3.2. Toy example and tutorial*, which simulates a variable W<sub>c</sub> that drives the bias between data usability (Δ) and functional connectivity (Y) and then shows how DRTMLE can adjust for this bias. Output:
+2. `DeconfoundedGroupDifference_Tutorial.Rmd` - Tutorial described in *Section 2.3.2. Toy example and tutorial*, which simulates a variable W<sub>c</sub> that drives the bias between data usability (Δ) and functional connectivity (Y) and then shows how DRTMLE can adjust for this bias. Output:
     - Fig. 2: Illustration of the improvement in functional connectivity from DRTMLE compared to the naive approach from a single simulated dataset.
 
 3. `QC_Impacts_Analysis_singleseed_noimputation_cb.R` - R code to run the entire DRTMLE procedure for a single seed as described in *section 2.3.2 Application: Deconfounded group difference in the KKI Dataset*. This includes estimation of the propensity model (same for each edge), estimation of 153 outcome models, and application of DRTMLE to estimate of the deconfounded mean for the ASD group, the deconfounded mean for the typically developing group, and their variances for 153 functional connectivity edges.
 
 4. `QC_Impacts_loopSeeds.sh` - Loops through seeds, creates a copy of QC_Impacts_Analysis_singleseed_cb.sh, and replaces "seedID" with a numeric value.
 
-5. `QC_Impacts_DRTMLE_Table_CirclePlotsWhiteBG.Rmd` - Code used to remove black background from screenshots of the 18 signal components saved in [Mango](http://ric.uthscsa.edu/mango/), average DRTMLE group means, group differences, and z-statistics across all 400 seeds. Outputs: 
-    - Fig. 7: The DRTMLE deconfounded group difference revealed more extensive differences than the naıve approach. 
-    - Fig. S3: Comparison of edges showing a group difference using the naive and DRTMLE approaches at FDR=0.05.
-    - Table S3: Summary of edges for which DRTMLE indicated a group difference at FDR=0.20. 
-   
-6. `QC_Impacts_Plots_PropensitiesOutcome.R` - R code to calculate the correlation between the mean ASD-TD z-statistic from DRTMLE for the two sets of 200 seeds, to compare the number of significant edges indicated by DRTMLE for the two sets of 200 seeds, to calculate Cohen's D for the naive ASD-TD differences, to plot the modified partial correlations, naive means, and DRTMLE means for the nine components with the smallest DRTMLE p-values, and to visualize the missingness of the initial dataset. Outputs:
-    - Fig. S4: Plots of modified partial correlations, naive means, and DRTMLE means for the nine components with smallest DRTMLE p-values.
-
+5. `Run_DRTMLE_ToyAndApplication_Analyses.Rmd` - uses ezspin and ezknit to run remaining analyses:
+    - `QC_Impacts_Analysis_RtoR_comparetosimulateddata.R`: compares data simulated in the tutorial to the real data
+    - `QC_Impacts_Plots_PropensitiesOutcome.R`: calculate the correlation between the mean ASD-TD z-statistic from DRTMLE for the two sets of 200 seeds, to compare the number of significant edges indicated by DRTMLE for the two sets of 200 seeds, to calculate Cohen's D for the naive ASD-TD differences, to plot the modified partial correlations, naive means, and DRTMLE means for the nine components with the smallest DRTMLE p-values, and to visualize the missingness of the initial dataset. Outputs:
+        - Fig. S4: Plots of modified partial correlations, naive means, and DRTMLE means for the nine components with smallest DRTMLE p-values.
+    - `QC_Impacts_DRTMLE_Table_CirclePlotsWhiteBG.Rmd`: remove black background from screenshots of the 18 signal components saved in [Mango (http://ric.uthscsa.edu/mango/), average DRTMLE group means, group differences, and z-statistics across all 400 seeds. Outputs: 
+        - Fig. 7: The DRTMLE deconfounded group difference revealed more extensive differences than the naıve approach. 
+        - Fig. S3: Comparison of edges showing a group difference using the naive and DRTMLE approaches at FDR=0.05.
+        - Table S3: Summary of edges for which DRTMLE indicated a group difference at FDR=0.20. 
 
 ![graphical overview](./illustrations/graphicalOverview.png)
 
