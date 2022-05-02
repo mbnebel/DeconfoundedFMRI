@@ -1,6 +1,6 @@
 # DeconfoundedFMRI
 Code to reproduce all analyses, tables, and figures in [Accounting for motion in resting-state fMRI: What part of the spectrum are we
-characterizing in autism spectrum disorder?](https://www.biorxiv.org/content/10.1101/2022.01.12.476077v1)
+characterizing in autism spectrum disorder?](https://www.biorxiv.org/content/10.1101/2022.01.12.476077v2)
 
 ### Our goals are two-fold: 
 1. To document the data loss and biases introduced by common motion exclusion practices in functional connectivity research
@@ -10,6 +10,7 @@ characterizing in autism spectrum disorder?](https://www.biorxiv.org/content/10.
 ### Main functions:
 1. `covariate_figures.Rmd` - code used to run all analyses in sections *2.1.3 Study Sample* to *2.2.4 Functional connectivity as a function of phenotypes*. Outputs:
     - Table 1: Socio-demographic characteristics of complete predictor cases.
+    - Fig. S1: Missingness of socio-demographic and behavioral variables in the initial dataset.
     - Fig 3: Motion quality control leads to dramatic reductions in sample size.
     - Fig 4: rs-fMRI exclusion probability changes with phenotype and age.
     - Fig S2: Univariate analysis of mean framewise displacement as a function of participant characteristics.
@@ -31,7 +32,6 @@ characterizing in autism spectrum disorder?](https://www.biorxiv.org/content/10.
     - Table S3: Summary of edges for which DRTMLE indicated a group difference at FDR=0.20. 
    
 6. `QC_Impacts_Plots_PropensitiesOutcome.R` - R code to calculate the correlation between the mean ASD-TD z-statistic from DRTMLE for the two sets of 200 seeds, to compare the number of significant edges indicated by DRTMLE for the two sets of 200 seeds, to calculate Cohen's D for the naive ASD-TD differences, to plot the modified partial correlations, naive means, and DRTMLE means for the nine components with the smallest DRTMLE p-values, and to visualize the missingness of the initial dataset. Outputs:
-    - Fig. S1: Missingness of socio-demographic and behavioral variables in the initial dataset.
     - Fig. S4: Plots of modified partial correlations, naive means, and DRTMLE means for the nine components with smallest DRTMLE p-values.
 
 
