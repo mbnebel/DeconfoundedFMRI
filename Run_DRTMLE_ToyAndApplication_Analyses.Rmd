@@ -1,0 +1,33 @@
+---
+title: "Run_DRTMLE_Application_Analyses"
+date: "4/1/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ezknitr)
+```
+
+## Combining various .R and .Rmd files used for sections 2.3.2 and 2.3.3 of the manuscript
+
+```{r toy-comparison}
+
+ezspin("QC_Impacts_Analysis_RtoR_comparetosimulateddata.R", wd = "ReviewerResponse", out_dir = "toy-comparison", fig_dir = "tmp")
+unlink("ReviewerResponse/toy-comparison/tmp", recursive = TRUE, force = TRUE)
+
+```
+
+
+```{r compare-seeds-examine-means-standard-errors}
+
+ezspin("QC_Impacts_Plots_PropensitiesOutcome.R", out_dir = "Application_Figures")
+
+```
+
+```{r circle-plots}
+
+ezknit("QC_Impacts_DRTMLE_Table_CirclePlotsWhiteBG.Rmd", out_dir = "Application_Figures")
+
+```
+
