@@ -68,7 +68,9 @@ geom_split_violin <- function (mapping = NULL, data = NULL, stat = "ydensity", p
 ```
 
 #### Load initial data set
+
 ```{r load-data, results = "asis"}
+
 load('./Data/noImputation/DataWithPropensities_seed1.RData')
 
 #convert PrimaryDiagnosis to factor
@@ -189,7 +191,9 @@ summary(tabAbort,
 Scans were either not attempted after two unsuccessful mock scan training sessions or aborted due to non-compliance for **`r toString(length(dat3$ID[dat3$aborted=="Yes"]))`** of the participants (`r toString(length(dat3$ID[dat3$aborted=="Yes"& dat3$PrimaryDiagnosis=="ASD"]))` ASD) in the set of complete cases.
 
 #### 2.1.5 Determine number of participants in complete cases set who attempted more than one scan
+
 ```{r n-multiple-scans, results="asis"}
+
 load('./Data/noImputation/nScans.RData')
 
 dat3 <- merge(dat3, nScans, all.x = TRUE)
