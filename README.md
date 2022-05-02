@@ -26,7 +26,7 @@ characterizing in autism spectrum disorder?](https://www.biorxiv.org/content/10.
 
 4. `QC_Impacts_loopSeeds.sh` - Loops through seeds, creates a copy of QC_Impacts_Analysis_singleseed_cb.sh, and replaces "seedID" with a numeric value.
 
-5. `Run_DRTMLE_ToyAndApplication_Analyses.Rmd' - uses ezspin and ezknit to run remaining analyses:
+5. `Run_DRTMLE_ToyAndApplication_Analyses.Rmd` - uses ezspin and ezknit to run remaining analyses:
     - `QC_Impacts_Analysis_RtoR_comparetosimulateddata.R`: compares data simulated in the tutorial to the real data
     - `QC_Impacts_Plots_PropensitiesOutcome.R`: calculate the correlation between the mean ASD-TD z-statistic from DRTMLE for the two sets of 200 seeds, to compare the number of significant edges indicated by DRTMLE for the two sets of 200 seeds, to calculate Cohen's D for the naive ASD-TD differences, to plot the modified partial correlations, naive means, and DRTMLE means for the nine components with the smallest DRTMLE p-values, and to visualize the missingness of the initial dataset. Outputs:
         - Fig. S4: Plots of modified partial correlations, naive means, and DRTMLE means for the nine components with smallest DRTMLE p-values.
