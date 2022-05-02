@@ -22,8 +22,9 @@ library(colordistance)
 library(magick)
 ```
 
-#### Define Circle plot functions:
-Based on [Dr. Mowinckel's](https://github.com/Athanasiamo) [tutorial](https://drmowinckels.io/blog/2018-05-25-circluar-plots-in-r-and-adding-images/) and adapted by [Daniel Lidstone](https://github.com/lidstone) & [Ben Risk](https://github.com/benjaminrisk) 
+#### Define Circle plot function:
+Based on [Dr. Mowinckel's](https://github.com/Athanasiamo) [tutorial](https://drmowinckels.io/blog/2018-05-25-circluar-plots-in-r-and-adding-images/) 
+and adapted by [Daniel Lidstone](https://github.com/lidstone) & [Ben Risk](https://github.com/benjaminrisk) 
 ```{r define-circle-plot-function}
 #### Function to Make Transparent Colors 
 t_col <- function(color, percent = 50, name = NULL) {
@@ -537,4 +538,57 @@ circos.clear()
 
 **Figure 5. The DRTMLE deconfounded group difference revealed more extensive differences than the naïve approach.** Z-statistics for autism spectrum disorder (ASD) versus typically developing (TD) using a) the na\"ive test and b) using DRTMLE. Connections are thresholded using a false discovery rate (FDR) of  0.20. Blue lines indicate ASD>TD (`r sum(results.ave$p.naive.fdr<.2 & results.ave$z.stat.diff.naive>0)` in naive, `r sum(results.ave$p.SL.fdr<.2 & results.ave$z.stat.diff.SL>0)` in DRTMLE). Red lines indicate ASD<TD (`r sum(results.ave$p.naive.fdr<.2 & results.ave$z.stat.diff.naive<0)` in naive,  `r sum(results.ave$p.SL.fdr<.2 & results.ave$z.stat.diff.SL<0)` in DRTMLE). Brain regions contributing to each independent component are illustrated and components are grouped by functional assignment. Navy nodes: control. Blue violet: default mode. Purple: salience/ventral attention. Magenta: pontomedullary/cerebellar. Coral: somatomotor. Orange: visual. Yellow: dorsal attention.
 
-#### References
+
+#### [Daniel Lidstone's](https://github.com/lidstone) analysis of edges indicated by DRTMLE to show a group difference at FDR=0.20
+
+```{r lidstone-network-pairs}
+SM_ix = grep('SomMot',c(icInfo$cognitive.domain))
+Vis_ix = grep('Vis',c(icInfo$cognitive.domain))
+CB_ix = grep('CB',c(icInfo$cognitive.domain))
+Con_ix = grep('Control',c(icInfo$cognitive.domain))
+Def_ix = grep('Default',c(icInfo$cognitive.domain))
+Sal_ix = grep('SalVenAtt',c(icInfo$cognitive.domain))
+DorAtt_ix = grep('Attn',c(icInfo$cognitive.domain))
+
+naivefdr = results.ave[abs(results.ave$p.naive.fdr)<0.20,c('EdgeName','p.naive.fdr','z.stat.diff.naive')]
+slfdr = results.ave[abs(results.ave$p.SL.fdr)<0.20,c('EdgeName','p.SL.fdr','z.stat.diff.SL')]
+
+naivefdr_edgeNum = as.numeric(unlist((stringr::str_extract_all(naivefdr$EdgeName, "\\d+"))))
+slfdr_edgeNum = as.numeric(unlist((stringr::str_extract_all(slfdr$EdgeName, "\\d+"))))
+
+naive_SM = length((which(naivefdr_edgeNum%in%SM_ix)))
+naive_Vis = length((which(naivefdr_edgeNum%in%Vis_ix)))
+naive_CB = length((which(naivefdr_edgeNum%in%CB_ix)))
+naive_Con = length((which(naivefdr_edgeNum%in%Con_ix)))
+naive_Def = length((which(naivefdr_edgeNum%in%Def_ix)))
+naive_Sal = length((which(naivefdr_edgeNum%in%Sal_ix)))
+naive_DorAtt = length((which(naivefdr_edgeNum%in%DorAtt_ix)))
+
+
+sl_SM = length((which(slfdr_edgeNum%in%SM_ix)))
+sl_Vis = length((which(slfdr_edgeNum%in%Vis_ix)))
+sl_CB = length((which(slfdr_edgeNum%in%CB_ix)))
+sl_Con = length((which(slfdr_edgeNum%in%Con_ix)))
+sl_Def = length((which(slfdr_edgeNum%in%Def_ix)))
+sl_Sal = length((which(slfdr_edgeNum%in%Sal_ix)))
+sl_DorAtt = length((which(slfdr_edgeNum%in%DorAtt_ix)))
+
+
+## Bar Plot
+df <- data.frame(Network = c("SMN","Visual","Subcortical","Control","Default","Ventral Attn","Dorsal Attn"), Naive = c(naive_SM,naive_Vis,naive_CB,naive_Con,naive_Def,naive_Sal,naive_DorAtt), DRTMLE = c(sl_SM,sl_Vis,sl_CB,sl_Con,sl_Def,sl_Sal,sl_DorAtt))
+data.m <- reshape2::melt(df, id.vars='Network')
+
+p <- ggplot(data=data.m, aes(x=Network, y=value, fill=variable)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=value), vjust=-0.1, color="black",
+            position = position_dodge(0.9), size=5)+
+  scale_fill_brewer(palette="Paired")+
+  theme_minimal()
+
+p + labs(x="Network", y = "Number of Edges")+
+  scale_fill_manual(values=c('black','lightgray'))+
+  theme_classic()+theme(legend.title = element_blank(),legend.text = element_text(size=14),axis.text=element_text(size=12),
+                        axis.title=element_text(size=14,face="bold"))+theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+```
+
