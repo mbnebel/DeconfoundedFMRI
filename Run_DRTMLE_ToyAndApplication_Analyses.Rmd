@@ -21,7 +21,13 @@ unlink("ReviewerResponse/toy-comparison/tmp", recursive = TRUE, force = TRUE)
 
 ```{r compare-seeds-examine-means-standard-errors}
 
-ezspin("QC_Impacts_Plots_PropensitiesOutcome.R", wd = "ReviewerResponse", out_dir = "toy-comparison", fig_dir = "tmp")
+ezspin("QC_Impacts_Plots_PropensitiesOutcome.R", out_dir = "Application_Figures")
+
+```
+
+```{r circle-plots}
+
+ezknit("QC_Impacts_DRTMLE_Table_CirclePlotsWhiteBG.Rmd", out_dir = "Application_Figures")
 
 ```
 
