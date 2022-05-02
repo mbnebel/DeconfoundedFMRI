@@ -146,6 +146,27 @@ In the lenient case, scans were excluded if the participant had less than 5 minu
 
 3. **None** = all participants
 
+#### Visualize missingness in covariate data:
+
+```{r vis-missing-covariates}
+dat.forcompletepredictors = dat3[,c('PrimaryDiagnosis','ADHD_Secondary','AgeAtScan','handedness',
+                                    'CurrentlyOnStimulants','PANESS.TotalOverflowNotAccountingForAge','WISC.GAI',
+                                    'DuPaulHome.InattentionRaw','DuPaulHome.HyperactivityRaw','ADOS.Comparable.Total', 
+                                    'Sex', 'SES.Family', 'Race2','CompletePredictorCases')]
+sum(complete.cases(dat.forcompletepredictors))
+dat.forcompletepredictors$CompletePredictorCases[dat.forcompletepredictors$CompletePredictorCases==0]=NA
+
+names(dat.forcompletepredictors) = c('Primary Diagnosis', 'ADHD Secondary', 'Age at Scan', 'Handedness',
+                                     'Prescribed Stimulants', 'Motor Overflow', 'GAI', 
+                                     'Inattention', 'Hyperactivity', 'iADOS', 
+                                     'Sex', 'SES', 'Race', 'Complete Predictor Cases') 
+
+pdf('./CovariatesAndRS-fMRIUsability/vis_miss.pdf')
+vis_miss(dat.forcompletepredictors, sort_miss = TRUE)
+dev.off()
+```
+
+
 #### Limit initial dataset to complete cases
 ```{r complete-cases-only, results="asis"}
 
