@@ -22,7 +22,7 @@ characterizing in autism spectrum disorder?](https://www.biorxiv.org/content/10.
 2. `DeconfoundedGroupDifference_Tutorial.Rmd` - Tutorial described in *Section 2.3.2. Toy example and tutorial*, which simulates a variable W<sub>c</sub> that drives the bias between data usability (Δ) and functional connectivity (Y) and then shows how DRTMLE can adjust for this bias. Output:
     - Fig. 2: Illustration of the improvement in functional connectivity from DRTMLE compared to the naive approach from a single simulated dataset.
 
-3. `QC_Impacts_Analysis_singleseed_noimputation_cb.R` - R code to run the entire DRTMLE procedure for a single seed as described in *section 2.3.2 Application: Deconfounded group difference in the KKI Dataset*. This includes estimation of the propensity model (same for each edge), estimation of 153 outcome models, and application of DRTMLE to estimate of the deconfounded mean for the ASD group, the deconfounded mean for the typically developing group, and their variances for 153 functional connectivity edges.
+3. `QC_Impacts_Analysis_singleseed_noimputation_cb.R` - R code to run the entire DRTMLE procedure for a single seed as described in *section 2.3.2 Application: Deconfounded group difference in the KKI Dataset*. This includes estimation of the propensity model (same for each edge), estimation of 153 outcome models, and application of DRTMLE to estimate the deconfounded mean for the ASD group, the deconfounded mean for the typically developing group, and their variances for 153 functional connectivity edges.
 
 4. `QC_Impacts_loopSeeds.sh` - Loops through seeds, creates a copy of QC_Impacts_Analysis_singleseed_cb.sh, and replaces "seedID" with a numeric value.
 
