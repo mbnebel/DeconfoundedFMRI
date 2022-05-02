@@ -5,11 +5,11 @@ date: '`r Sys.Date()`'
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r message=FALSE, warning=FALSE}
+```{r same-stuff, message=FALSE, warning=FALSE}
 library(grid)
 library(xtable)
 library(dplyr)
@@ -26,8 +26,8 @@ library(broom)
 ```
 
 #### Load initial data set
-```{r load-data}
-load('../Data/noImputation/DataWithPropensities_seed1.RData')
+```{r}
+load('./Data/noImputation/DataWithPropensities_seed1.RData')
 
 #convert PrimaryDiagnosis to factor
 dat3$PrimaryDiagnosis <- factor(dat3$PrimaryDiagnosis, levels = c("Autism", "None"))
@@ -543,7 +543,7 @@ top_row <- cowplot::plot_grid(p_ados, p_srs, p_in, p_hi, p_mo, p_age, p_gai, nco
 second_row <- cowplot::plot_grid(d_ados, d_srs, d_in, d_hi, d_mo, d_age, d_gai, ncol=7, 
                                  rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
 
-png("./fig_probExclusion_allGAM_TD_ASD_cc_sexRaceSES.png",width=10,height=6,units="in",res=200)
+png("./ReviewerResponse/probEx_withSexSESRace/fig_probExclusion_allGAM_TD_ASD_cc_sexRaceSES.png",width=10,height=6,units="in",res=200)
 cowplot::plot_grid(p_legend, top_row, NULL, 
                    second_row, NULL, hist_legend, 
                    nrow=6, rel_heights=c(.1, 1, -.01, .5, -.05, .1))
