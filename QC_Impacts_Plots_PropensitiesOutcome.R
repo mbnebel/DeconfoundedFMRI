@@ -466,8 +466,8 @@ gn.p6=plot_pcorr_fun(EdgeName='r.ic13.ic26',EdgeNamePlot='IC13-IC26')
 gn.p7=plot_pcorr_fun(EdgeName='r.ic21.ic30',EdgeNamePlot='IC21-IC30')
 gn.p8=plot_pcorr_fun(EdgeName='r.ic8.ic22',EdgeNamePlot='IC08-IC22',legend=TRUE)
 
-
-pdf(file='./Application_figures/DataForNineComponents_naive_drtmle_drtmleOnly.pdf')
+#' Print Figure S.4: Plots of partial correlations, naive means, and DRTMLE means for each diagnosis group for the nine components with the smallest DRTMLE p-values
+pdf(file='./Application_figures/DataForNineComponents_naive_drtmle.pdf')
 grid.arrange(gn.p0,gn.p1,gn.p2,gn.p3,gn.p4,gn.p5,gn.p6,gn.p7,gn.p8,nrow=3)
 dev.off()
 
