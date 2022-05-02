@@ -575,7 +575,7 @@ sl_DorAtt = length((which(slfdr_edgeNum%in%DorAtt_ix)))
 
 
 ## Bar Plot
-df <- data.frame(Network = c("SMN","Visual","Subcortical","Control","Default","Ventral Attn","Dorsal Attn"), Naive = c(naive_SM,naive_Vis,naive_CB,naive_Con,naive_Def,naive_Sal,naive_DorAtt), DRTMLE = c(sl_SM,sl_Vis,sl_CB,sl_Con,sl_Def,sl_Sal,sl_DorAtt))
+df <- data.frame(Network = c("SMN","Visual","Cerebellum","Control","Default","Ventral Attn","Dorsal Attn"), Naive = c(naive_SM,naive_Vis,naive_CB,naive_Con,naive_Def,naive_Sal,naive_DorAtt), DRTMLE = c(sl_SM,sl_Vis,sl_CB,sl_Con,sl_Def,sl_Sal,sl_DorAtt))
 data.m <- reshape2::melt(df, id.vars='Network')
 
 p <- ggplot(data=data.m, aes(x=Network, y=value, fill=variable)) +
