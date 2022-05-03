@@ -1,6 +1,6 @@
 ---
 title: "Run_DRTMLE_Application_Analyses"
-date: "4/1/2022"
+date: '`r Sys.Date()`'
 output: html_document
 ---
 
