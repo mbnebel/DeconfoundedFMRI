@@ -1,7 +1,7 @@
 ---
 title: "probability of exclusion as a function of the covariates controlling for sex, race, and SES"
 author: "MB Nebel"
-date: '2022-05-02'
+date: '2022-05-12'
 output: html_document
 ---
 

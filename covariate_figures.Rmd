@@ -378,7 +378,7 @@ graph <- grViz("digraph flowchart {
 
 graph %>% export_svg() %>% 
   charToRaw() %>% 
-  rsvg_png("./CovariatesAndRS-fMRIUsability/exclusionFlowChart.png", width = 1500, heigh = 500)
+  rsvg_png("./CovariatesAndRS-fMRIUsability/exclusionFlowChart.png", width = 2700, height =1200)
 
 #numbers for Fig 1a
 tabN<- tableby(Motion.Exclusion.Level~
@@ -430,7 +430,7 @@ dx_proportions <- ggplot(motion, aes(x = PrimaryDiagnosis, fill = Included))+
   theme(axis.title.x = element_blank())+
   theme(axis.text.x = element_text(size = 10))
   
-png("./CovariatesAndRS-fMRIUsability/fig_propExcludedDx_cc.png",width=3,height=2.5,units="in",res=200)
+png("./CovariatesAndRS-fMRIUsability/fig_propExcludedDx_cc.png",width=3,height=2.5,units="in",res=300)
 dx_proportions
 invisible(dev.off())
 
@@ -890,11 +890,11 @@ hist_legend = cowplot::get_legend(d_gai + guides(color = guide_legend(nrow = 1))
 top_row <- cowplot::plot_grid(p_ados, p_srs, p_in, p_hi, p_mo, p_age, p_gai, ncol=7, rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
 bottom_row <- cowplot::plot_grid(d_ados, d_srs, d_in, d_hi, d_mo, d_age, d_gai, ncol=7, rel_widths=c(1.18/7, .97/7, .97/7, .97/7, .97/7, .97/7, .97/7))
 
-png("./CovariatesAndRS-fMRIUsability/fig_probExclusion_allGAM_TD_ASD_cc.png",width=10,height=6,units="in",res=200)
+png("./CovariatesAndRS-fMRIUsability/fig_probExclusion_allGAM_TD_ASD_cc.png",width=10,height=6,units="in",res=300)
 cowplot::plot_grid(p_legend, top_row, NULL, bottom_row, NULL, hist_legend, nrow=6, rel_heights=c(.1, 1, -.01, .5, -.07, .1))
 dev.off()
 
-#png("~/Dropbox/Apps/Overleaf/MotionSelectionBias_rsfMRI/Figures/fig_probExclusion_allGAM_TD_ASD_cc.png",width=10,height=6,units="in",res=200)
+#png("~/Dropbox/Apps/Overleaf/MotionSelectionBias_rsfMRI/Figures/fig_probExclusion_allGAM_TD_ASD_cc.png",width=10,height=6,units="in",res=300)
 cowplot::plot_grid(p_legend, top_row, NULL, bottom_row, NULL, hist_legend, nrow=6, rel_heights=c(.1, 1, -.05, .5, -.07, .1))
 #dev.off()
 
@@ -1402,7 +1402,7 @@ fig2A <- cowplot::plot_grid(v_legend, paper_ados, nrow=2, rel_heights=c(.9, 1.1)
 fig2B <- cowplot::plot_grid(aim1_srs, paper_inat, paper_hyp, aim1_of, aim1_age, aim1_gai, ncol=6, 
                             rel_widths=c(.97/6,.97/6,.97/6,.97/6,.97/6, 1.15/6))
 
-png("./CovariatesAndRS-fMRIUsability/fig_violins_wide_cc.png",width=8,height=4,units="in",res=200)
+png("./CovariatesAndRS-fMRIUsability/fig_violins_wide_cc.png",width=8,height=4,units="in",res=300)
 cowplot::plot_grid(fig2A, fig2B, ncol=2, rel_widths=c(.2, 1.2))
 invisible(dev.off())
 
@@ -1661,7 +1661,7 @@ hist_p_legend <- cowplot::get_legend(hist_gai_p + guides(color = guide_legend(nr
 
 fc_hist <- cowplot::plot_grid(hist_ados_p, hist_srs_p, hist_in_p, hist_hi_p, hist_mo_p, hist_age_p, hist_gai_p, ncol=7, rel_widths=c(1.18/7, .97/6, .97/6, .97/6, .97/6, .97/6, .97/6))
 
-png("./CovariatesAndRS-fMRIUsability/fig_hist_rfc_cc.png",width=8,height=3,units="in",res=200)
+png("./CovariatesAndRS-fMRIUsability/fig_hist_rfc_cc.png",width=8,height=3,units="in",res=300)
 
 cowplot::plot_grid(fc_hist, hist_p_legend, nrow=2, rel_heights=c(1, .1))
 dev.off()
@@ -1833,7 +1833,7 @@ frames_violin <- ggplot(passOnly, aes(Motion.Exclusion.Level, FramesWithFDLessTh
 
 #### Combine 3 FD plots with just lenient and strict Motion.Exclusion.Levels and save
 ```{r combine-FD, echo=F, message=FALSE, warning=FALSE, fig.width = 5, fig.height = 3}
-png("./CovariatesAndRS-fMRIUsability/fd_metrics_2levels.png",width=5,height=2.5,units="in",res=200)
+png("./CovariatesAndRS-fMRIUsability/fd_metrics_2levels.png",width=5,height=2.5,units="in",res=300)
 
 cowplot::plot_grid(meanFD_violin, maxFD_violin, frames_violin, 
                    ncol=3, nrow =1, rel_widths = c(1/3, 1/3, 1/3), labels = c("","", ""))
