@@ -1,6 +1,6 @@
 # DeconfoundedFMRI
 Code to reproduce all analyses, tables, and figures in [Accounting for motion in resting-state fMRI: What part of the spectrum are we
-characterizing in autism spectrum disorder?](https://www.biorxiv.org/content/10.1101/2022.01.12.476077v2)
+characterizing in autism spectrum disorder?](https://doi.org/10.1016/j.neuroimage.2022.119296)
 
 ### Our goals are two-fold: 
 1. To document the data loss and biases introduced by common motion exclusion practices in functional connectivity research
