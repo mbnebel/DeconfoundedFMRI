@@ -316,7 +316,7 @@ In this example, the true mean functional connectivity in the ASD group is appro
 
 ```{r print-fig, echo=FALSE, results=FALSE}
 # Print figure for the manuscript
-png('./Application_Figures/SimulatedDataExample.png',width=4,height=4,units="in",res=200)
+png('./Application_Figures/SimulatedDataExample.png',width=4.5,height=4.5,units="in",res=300)
 #pdf('SimulatedDataExample.pdf')
 ggplot(mean.data, aes(Method, Mean)) + geom_bar(stat = "identity",aes(fill=Method)) + geom_errorbar(aes(ymin=Mean.Lower,ymax=Mean.Upper),width=0.2)+coord_flip() + theme(legend.position = 'none')+scale_fill_manual("legend", values = c("True" = "#7FAE88", "Naive" = "#5D60AA", "DRTMLE"='#76B8C2'))+theme(text = element_text(size=20))+ylab('ASD - TD')
 dev.off()
