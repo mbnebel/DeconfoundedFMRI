@@ -172,7 +172,7 @@ Y.sample.QC[Delta.sample==0]=NA
 
 <center><img src="./illustrations/missingnessMechanism.png" width="250px" /></center>
 
-We now estimate the propensity model and extract the predicted probabilities of data usability (propensities) using SuperLearner. [Katherine Hoffman](https://github.com/hoffmakl) has a great visual guide explaining how superlearning, or model stacking, works: [Become a Superlearner!](https://www.khstats.com/blog/sl/superlearning/)
+We now estimate the propensity model and extract the predicted probabilities of data usability (propensities) using SuperLearner. [Katherine Hoffman](https://github.com/kathoffman) has a great visual guide explaining how superlearning, or model stacking, works: [Become a Superlearner!](https://www.khstats.com/blog/sl/superlearning/)
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(drtmle)
